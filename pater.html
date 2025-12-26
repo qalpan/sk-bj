@@ -2,95 +2,39 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>Төлем Түбіртегі (Динамикалық)</title>
+    <title>Түбіртек: {{ apt.id }}</title>
     <style>
-        body { font-family: Arial, serif; font-size: 11px; color: #424242; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #a3a3a3; padding: 4px 6px; text-align: right; vertical-align: bottom; }
-        .header-cell { vertical-align: bottom; text-align: center; padding: 6px 4px; background: #f9f9f9; }
-        .month-header { text-align: left; font-size: 14px; font-weight: bold; }
-        .acc-info { text-align: left; font-size: 12px; border: none; }
-        .charge-cell { background-color: #f8f8f8; }
-        .total-acc-row td { background-color: #ffe082; }
-        .bold { font-weight: bold; }
-        .pay-links { margin-top: 15px; text-align: right; }
-        .pay-btn { padding: 8px 15px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #a3a3a3; padding: 5px; text-align: right; }
+        .header-bg { background: #f0f0f0; text-align: center; }
+        .total-row { background: #ffe082; font-weight: bold; }
+        .pay-btn { background: #27ae60; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; }
     </style>
 </head>
 <body>
+    <h3>Желтоқсан 2025 - Түбіртек</h3>
+    <p>Пәтер: <strong>{{ apt.id }}</strong> | Аудан: {{ apt.area }} м² | Дербес шот: {{ apt.account|default:"Бөлінуде" }}</p>
 
-<div id="loader">Деректер жүктелуде...</div>
-<div id="content" style="display:none;">
     <table>
-        <tr>
-            <td class="acc-info" style="width: 25%">
-                <span class="month-header" id="current-month">Желтоқсан 2025</span><br>
-                дербес шот: <span id="acc-number" class="bold">---</span><br>
-                Aqsai-3, 10a, <strong id="apt-id">---</strong> - <span id="apt-area">---</span> m2
-            </td>
-            <td colspan="2" class="header-cell">Үиді күтіп ұстау.<br><span id="rate-text">40</span> тңг,м2</td>
-            <td colspan="2" class="header-cell">Үи іші тазалығы.<br>850 тңг,пт.кв.</td>
-            <td colspan="2" class="header-cell">Бейнебақылау.<br>300 тңг,пт.кв.</td>
-            <td colspan="2" class="header-cell">Жылыу есептеу.<br>5 тңг,м2</td>
-            <td colspan="2" class="header-cell">Күрделі жөндеу.<br>40 тңг,м2</td>
-            <td colspan="2" class="header-cell">Жыйыны. Итого</td>
+        <tr class="header-bg">
+            <td>Қызмет</td>
+            <td>Тариф</td>
+            <td>Сомасы</td>
         </tr>
         <tr>
-            <td style="text-align:left">Айына есептеу</td>
-            <td class="charge-cell" id="val-maint">0</td><td></td>
-            <td class="charge-cell" id="val-clean">0</td><td></td>
-            <td class="charge-cell" id="val-sec">0</td><td></td>
-            <td class="charge-cell" id="val-heat">0</td><td></td>
-            <td class="charge-cell" id="val-cap">0</td><td></td>
-            <td class="charge-cell bold" id="val-total">0</td><td></td>
+            <td>Үй күтімі</td>
+            <td>{{ apt.auto_rate }}</td>
+            <td>{% widthratio apt.area 1 apt.auto_rate %}</td>
         </tr>
-        <tr class="total-acc-row">
-            <td style="text-align:left">Жалпы қарыз / Қалдық</td>
-            <td colspan="10" style="text-align:center">Төлемге - К оплате</td>
-            <td id="val-balance" class="bold">0</td>
-            <td style="background: #fff3cd; text-align: center;">
-                <a href="#" id="halyk-link" target="_blank" class="pay-btn">Halyk төлем</a>
-            </td>
+        <tr class="total-row">
+            <td colspan="2">Төлемге (Итого):</td>
+            <td>{{ apt.balance }} тңг</td>
         </tr>
     </table>
-</div>
-
-<script>
-    // URL-ден пәтер нөмірін оқу (мысалы: pater.html?id=9a)
-    const urlParams = new URLSearchParams(window.location.search);
-    const aptId = urlParams.get('id');
-
-// pater.html ішіндегі іздеу функциясы
-async function fetchData() {
-    // URL-ден тек пәтер нөмірін аламыз: pater.html?id=9a
-    const urlParams = new URLSearchParams(window.location.search);
-    const aptId = urlParams.get('id'); 
-
-    if (!aptId) {
-        document.getElementById('loader').innerText = "Пәтер нөмірін енгізіңіз!";
-        return;
-    }
-
-    try {
-        // Серверден пәтер нөмірі (ID) бойынша іздеу
-        const response = await fetch(`https://sk-bj.onrender.com/api/get-by-apt-id/${aptId}`);
-        const data = await response.json();
-
-        if (!data) {
-            document.getElementById('loader').innerText = "Мұндай пәтер табылмады!";
-            return;
-        }
-
-        // Егер дербес шот (account) базада болмаса, "Бөлінбеген" деп көрсету
-        document.getElementById('acc-number').innerText = data.account || "Дербес шот анықталмаған";
-        document.getElementById('apt-id').innerText = data.id;
-        // ... қалған деректерді толтыру
-    } catch (error) {
-        console.error("Қате:", error);
-    }
-}
-
-    fetchData();
-</script>
+    <br>
+    {% if apt.account %}
+    <a href="https://halykbank.kz/pay/{{ apt.account }}" class="pay-btn">Halyk арқылы төлеу</a>
+    {% endif %}
 </body>
 </html>
