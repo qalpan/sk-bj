@@ -61,14 +61,29 @@
 <script>
     let db = { apartments: [] };
 
-    async function fetchData() {
+async function fetchData() {
+    try {
         const res = await fetch('/api/data/');
         db = await res.json();
+
+        // Егер база бос болса, кестені тазалап, хабарлама шығару
+        if (!db.apartments || db.apartments.length === 0) {
+            document.getElementById('tableBody').innerHTML = "<tr><td colspan='9'>База бос. Жаңа пәтер қосыңыз немесе JSON файлын толтырыңыз.</td></tr>";
+            document.getElementById('syncStatus').innerText = "Статус: Дерек жоқ";
+            return;
+        }
+
+        // Дерек болса ғана айларды таңдауды іске қосу
         const selector = document.getElementById('monthSelector');
         const months = db.apartments[0].ledger.map(l => l.month);
-        selector.innerHTML = months.map((m, i) => `<option value="${i}" ${i===months.length-1?'selected':''}>${m}</option>`).join('');
+        selector.innerHTML = months.map((m, i) => `<option value="${i}" ${i === months.length - 1 ? 'selected' : ''}>${m}</option>`).join('');
+        
         renderTable();
+        document.getElementById('syncStatus').innerText = "Статус: Жаңартылды";
+    } catch (e) {
+        console.error("Қате:", e);
     }
+}
 
     function renderTable() {
         const mIdx = document.getElementById('monthSelector').value;
