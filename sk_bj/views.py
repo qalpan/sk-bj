@@ -205,3 +205,18 @@ def import_from_json(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return render(request, 'import_page.html')
+
+def generate_receipt(request, apt_id):
+    prop = Property.objects.get(apartment_id=apt_id)
+    
+    # Төлем сілтемелерін дайындау (мысалы)
+    kaspi_url = f"https://kaspi.kz/pay/OSI_AKSAI_3_10A?service=1&apt={apt_id}"
+    halyk_url = f"https://homebank.kz/payments/common/OSI_AKSAI?apt={apt_id}"
+
+    context = {
+        'prop': prop,
+        'kaspi_url': kaspi_url,
+        'halyk_url': halyk_url,
+        'current_month': "Желтоқсан / Декабрь 2025"
+    }
+    return render(request, 'receipt_template.html', context)
