@@ -1,9 +1,10 @@
 from django.contrib import admin
 from django.urls import path
-from . import views  # Нүкте (.) "осы папкадан ізде" дегенді білдіреді
+# 'core' орнына 'sk_bj' деп жазамыз, себебі views.py осы папкада
+from sk_bj import views  
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  # Дұрысталды: admin.site.urls
+    path('admin/', admin.site.urls),
     path('login/', views.resident_auth, name='resident_auth'),
     path('import-json/', views.import_from_json, name='import_json'),
     path('signup-special-access/', views.signup, name='signup'),
