@@ -1,26 +1,22 @@
 from django.db import models
 
 class Property(models.Model):
-    apartment_id = models.CharField("Пәтер нөмірі", max_length=10, unique=True)
-    account_number = models.CharField("Дербес шот", max_length=20, unique=True)
-    area = models.DecimalField("Аудан (м2)", max_digits=10, decimal_places=2)
-    
-    # Жыл басындағы қарыздар (initialDebt)
-    debt_maint = models.DecimalField("ПИК қарызы", max_digits=15, decimal_places=2, default=0)
-    debt_clean = models.DecimalField("Тазалық қарызы", max_digits=15, decimal_places=2, default=0)
-    debt_sec = models.DecimalField("Бейнебақылау қарызы", max_digits=15, decimal_places=2, default=0)
-    debt_heat = models.DecimalField("Жылу есептегіш қарызы", max_digits=15, decimal_places=2, default=0)
-    debt_cap = models.DecimalField("Күрделі жөндеу қарызы", max_digits=15, decimal_places=2, default=0)
+    apartment_id = models.CharField(max_length=50, unique=True)
+    account_number = models.CharField(max_length=50, unique=True)
+    address = models.CharField(max_length=255, default="Мекенжай көрсетілмеген") # ОСЫ ЖОЛДЫ ҚОСЫҢЫЗ
+    area = models.FloatField(default=0.0)
+    debt_maint = models.FloatField(default=0.0)
+    debt_clean = models.FloatField(default=0.0)
+    debt_sec = models.FloatField(default=0.0)
+    debt_heat = models.FloatField(default=0.0)
+    debt_cap = models.FloatField(default=0.0)
 
     def __str__(self):
-        return f"{self.apartment_id}-пәтер ({self.account_number})"
+        return f"Пәтер {self.apartment_id}"
 
 class BankPayment(models.Model):
-    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='payments')
-    date = models.DateTimeField("Төлем күні", auto_now_add=True)
-    amount = models.DecimalField("Сома", max_digits=15, decimal_places=2)
-    payer_name = models.CharField("Төлеуші", max_length=255)
-    external_id = models.CharField("Транзакция ID", max_length=100, unique=True)
-
-    def __str__(self):
-        return f"{self.amount} тг - {self.payer_name}"
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    amount = models.FloatField()
+    payment_date = models.DateTimeField(auto_now_add=True)
+    payer_name = models.CharField(max_length=255)
+    external_id = models.CharField(max_length=255, unique=True)
