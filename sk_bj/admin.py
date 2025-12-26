@@ -1,14 +1,7 @@
+from import_export.admin import ImportExportModelAdmin
 from django.contrib import admin
-from .models import Tariff, Property, Invoice
-
-@admin.register(Tariff)
-class TariffAdmin(admin.ModelAdmin):
-    list_display = ('name', 'rate', 'is_per_sqm')
+from .models import Property
 
 @admin.register(Property)
-class PropertyAdmin(admin.ModelAdmin):
+class PropertyAdmin(ImportExportModelAdmin): # Осы жерін ауыстырдық
     list_display = ('address', 'owner_name', 'area')
-
-@admin.register(Invoice)
-class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('property', 'month', 'total_amount')
