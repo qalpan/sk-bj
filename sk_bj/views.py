@@ -4,38 +4,38 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-# Файлды іздейтін нақты папка
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-# СІЗДІҢ ФАЙЛЫҢЫЗДЫҢ НАТҚЫ АТЫ:
+# 1. Жобаның негізгі папкасын анықтаймыз
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 2. Сіз жүктеген файлдың нақты аты
 DB_NAME = 'kz_tulem_database_2025-12-26.json'
-DATA_FILE = os.path.join(CURRENT_DIR, DB_NAME)
+
+# 3. Файлды екі жерден іздейміз: негізгі папкадан немесе sk_bj ішінен
+DATA_FILE = os.path.join(BASE_DIR, DB_NAME)
+if not os.path.exists(DATA_FILE):
+    DATA_FILE = os.path.join(BASE_DIR, 'sk_bj', DB_NAME)
 
 def load_data():
-    # Файл бар ма, жоқ па екенін тексеру (Консольге шығару)
     if not os.path.exists(DATA_FILE):
-        print(f"ҚАТЕ: {DATA_FILE} файлы табылмады!")
         return {"apartments": []}
-    
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except Exception as e:
-        print(f"JSON ОҚУ ҚАТЕСІ: {e}")
+    except Exception:
         return {"apartments": []}
 
 @csrf_exempt
 def api_manager(request, apt_id=None):
     try:
-        # Егер пәтер бетіне (pater/1/) кірсе
-        if 'pater' in request.path:
-            return render(request, 'pater.html', {'apt_id': apt_id})
-        
-        # API деректерін алу
         if request.method == 'GET':
+            # Егер /pater/ нөмірімен келсе, HTML көрсету
+            if apt_id or 'pater' in request.path:
+                return render(request, 'pater.html', {'apt_id': apt_id})
+            
+            # API деректерін беру
             data = load_data()
             return JsonResponse(data, safe=False)
 
-        # Деректерді сақтау
         if request.method == 'POST':
             new_data = json.loads(request.body)
             with open(DATA_FILE, 'w', encoding='utf-8') as f:
