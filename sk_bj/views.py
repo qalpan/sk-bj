@@ -15,3 +15,39 @@ def signup(request):
     else:
         form = UserCreationForm()
     return render(request, 'signup.html', {'form': form})
+
+import csv
+import io
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Property, BankPayment
+
+def upload_bank_file(request):
+    if request.method == 'POST' and request.FILES.get('bank_file'):
+        file = request.FILES['bank_file']
+        decoded_file = file.read().decode('utf-8')
+        io_string = io.StringIO(decoded_file)
+        reader = csv.DictReader(io_string)
+        
+        count = 0
+        for row in reader:
+            try:
+                account = row['Лицевой счет']
+                amount = float(row['Сумма'])
+                payer = row['ФИО плательщика']
+                
+                prop = Property.objects.get(account_number=account)
+                BankPayment.objects.get_or_create(
+                    property=prop,
+                    amount=amount,
+                    payer_name=payer,
+                    external_id=f"{account}_{amount}_{payer}"
+                )
+                count += 1
+            except Exception as e:
+                continue # Егер пәтер табылмаса, келесісіне көшеді
+        
+        messages.success(request, f"{count} төлем сәтті жүктелді!")
+        return redirect('/admin/sk_bj/bankpayment/') # Төлемдер тізіміне қайтару
+    
+    return render(request, 'upload.html')
