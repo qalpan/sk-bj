@@ -76,77 +76,60 @@
         }
     }
 
-    function renderTable() {
-        const mIdx = document.getElementById('monthSelector').value;
-        const tbody = document.getElementById('tableBody');
-        const tfoot = document.getElementById('tableFooter');
-        tbody.innerHTML = '';
+function renderTable() {
+    const mIdx = document.getElementById('monthSelector').value;
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    
+    db.apartments.forEach(apt => {
+        const L = apt.ledger[mIdx];
+        const ch = L.charges || {};
         
-        let totals = {
-            maint: {p:0, f:0}, clean: {p:0, f:0}, sec: {p:0, f:0}, 
-            heat: {p:0, f:0}, cap: {p:0, f:0}, monthly: {p:0, f:0}, debt: 0
-        };
+        // 1. Төлемдерді басынан жинақтап есептейміз
+        let fact = { maint: 0, clean: 0, sec: 0, heat: 0, cap: 0 };
+        
+        // Егер осы айда төлемдер болса, оларды қосамыз
+        if (L.paymentTransactions && L.paymentTransactions.length > 0) {
+            L.paymentTransactions.forEach(t => {
+                if (t.amounts) {
+                    fact.maint += (t.amounts.maint || 0);
+                    fact.clean += (t.amounts.clean || 0);
+                    fact.sec += (t.amounts.sec || 0);
+                    fact.heat += (t.amounts.heat || 0);
+                    fact.cap += (t.amounts.cap || 0);
+                }
+            });
+        }
 
-        db.apartments.forEach(apt => {
-            const L = apt.ledger[mIdx];
-            const ch = L.charges || {};
-            
-            // paymentTransactions ішінен төлемдерді жинақтау логикасы
-            let fact = { maint: 0, clean: 0, sec: 0, heat: 0, cap: 0 };
-            if (L.paymentTransactions && L.paymentTransactions.length > 0) {
-                L.paymentTransactions.forEach(t => {
-                    if (t.amounts) {
-                        fact.maint += (t.amounts.maint || 0);
-                        fact.clean += (t.amounts.clean || 0);
-                        fact.sec += (t.amounts.sec || 0);
-                        fact.heat += (t.amounts.heat || 0);
-                        fact.cap += (t.amounts.cap || 0);
-                    }
-                });
-            }
-            const totalFact = fact.maint + fact.clean + fact.sec + fact.heat + fact.cap;
-
-            // Жиынтықтарды қосу
-            totals.maint.p += ch.maint; totals.maint.f += fact.maint;
-            totals.clean.p += ch.clean; totals.clean.f += fact.clean;
-            totals.sec.p += ch.sec;     totals.sec.f += fact.sec;
-            totals.heat.p += ch.heat;   totals.heat.f += fact.heat;
-            totals.cap.p += ch.cap;     totals.cap.f += fact.cap;
-            totals.monthly.p += (L.totalMonthlyCharge || 0);
-            totals.monthly.f += totalFact;
-            totals.debt += (L.accumulated.overall || 0);
-
-            tbody.innerHTML += `
-                <tr>
-                    <td><b>${apt.id}</b></td>
-                    <td>${apt.area}</td>
-                    <td><div class="cell-split"><span class="plan">${ch.maint}</span><span class="fact">${fact.maint}</span></div></td>
-                    <td><div class="cell-split"><span class="plan">${ch.clean}</span><span class="fact">${fact.clean}</span></div></td>
-                    <td><div class="cell-split"><span class="plan">${ch.sec}</span><span class="fact">${fact.sec}</span></div></td>
-                    <td><div class="cell-split"><span class="plan">${ch.heat}</span><span class="fact">${fact.heat}</span></div></td>
-                    <td><div class="cell-split"><span class="plan">${ch.cap}</span><span class="fact">${fact.cap}</span></div></td>
-                    <td class="total-row">${L.totalMonthlyCharge} / <span style="color:#27ae60">${totalFact}</span></td>
-                    <td style="color:${L.accumulated.overall > 0 ? 'red' : 'green'}; font-weight:bold;">
-                        ${L.accumulated.overall.toLocaleString()}
-                    </td>
-                </tr>
-            `;
-        });
-
-        // Қорытынды (Итого) жолы
-        tfoot.innerHTML = `
-            <tr class="footer-row">
-                <td colspan="2">БАРЛЫҒЫ (Жоспар/Факт):</td>
-                <td>${totals.maint.p.toFixed(0)} / ${totals.maint.f.toFixed(0)}</td>
-                <td>${totals.clean.p.toFixed(0)} / ${totals.clean.f.toFixed(0)}</td>
-                <td>${totals.sec.p.toFixed(0)} / ${totals.sec.f.toFixed(0)}</td>
-                <td>${totals.heat.p.toFixed(0)} / ${totals.heat.f.toFixed(0)}</td>
-                <td>${totals.cap.p.toFixed(0)} / ${totals.cap.f.toFixed(0)}</td>
-                <td style="background:#27ae60">${totals.monthly.p.toFixed(0)} / ${totals.monthly.f.toFixed(0)}</td>
-                <td style="background:#d35400">${totals.debt.toLocaleString()} ₸</td>
+        // 2. Кестеге шығару (Жоспар / Факт форматында)
+        tbody.innerHTML += `
+            <tr>
+                <td>${apt.id}</td>
+                <td>
+                    <div class="plan">${ch.maint}</div>
+                    <div class="fact" style="color:green">${fact.maint}</div>
+                </td>
+                <td>
+                    <div class="plan">${ch.clean}</div>
+                    <div class="fact" style="color:green">${fact.clean}</div>
+                </td>
+                <td>
+                    <div class="plan">${ch.sec}</div>
+                    <div class="fact" style="color:green">${fact.sec}</div>
+                </td>
+                <td>
+                    <div class="plan">${ch.heat}</div>
+                    <div class="fact" style="color:green">${fact.heat}</div>
+                </td>
+                <td>
+                    <div class="plan">${ch.cap}</div>
+                    <div class="fact" style="color:green">${fact.cap}</div>
+                </td>
+                <td style="font-weight:bold">${L.accumulated.overall.toLocaleString()}</td>
             </tr>
         `;
-    }
+    });
+}
 
     window.onload = fetchData;
 </script>
