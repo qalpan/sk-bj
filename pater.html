@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <title>Төлем Түбіртегі (Динамикалық)</title>
+    <style>
+        body { font-family: Arial, serif; font-size: 11px; color: #424242; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border: 1px solid #a3a3a3; padding: 4px 6px; text-align: right; vertical-align: bottom; }
+        .header-cell { vertical-align: bottom; text-align: center; padding: 6px 4px; background: #f9f9f9; }
+        .month-header { text-align: left; font-size: 14px; font-weight: bold; }
+        .acc-info { text-align: left; font-size: 12px; border: none; }
+        .charge-cell { background-color: #f8f8f8; }
+        .total-acc-row td { background-color: #ffe082; }
+        .bold { font-weight: bold; }
+        .pay-links { margin-top: 15px; text-align: right; }
+        .pay-btn { padding: 8px 15px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="loader">Деректер жүктелуде...</div>
+<div id="content" style="display:none;">
+    <table>
+        <tr>
+            <td class="acc-info" style="width: 25%">
+                <span class="month-header" id="current-month">Желтоқсан 2025</span><br>
+                дербес шот: <span id="acc-number" class="bold">---</span><br>
+                Aqsai-3, 10a, <strong id="apt-id">---</strong> - <span id="apt-area">---</span> m2
+            </td>
+            <td colspan="2" class="header-cell">Үиді күтіп ұстау.<br><span id="rate-text">40</span> тңг,м2</td>
+            <td colspan="2" class="header-cell">Үи іші тазалығы.<br>850 тңг,пт.кв.</td>
+            <td colspan="2" class="header-cell">Бейнебақылау.<br>300 тңг,пт.кв.</td>
+            <td colspan="2" class="header-cell">Жылыу есептеу.<br>5 тңг,м2</td>
+            <td colspan="2" class="header-cell">Күрделі жөндеу.<br>40 тңг,м2</td>
+            <td colspan="2" class="header-cell">Жыйыны. Итого</td>
+        </tr>
+        <tr>
+            <td style="text-align:left">Айына есептеу</td>
+            <td class="charge-cell" id="val-maint">0</td><td></td>
+            <td class="charge-cell" id="val-clean">0</td><td></td>
+            <td class="charge-cell" id="val-sec">0</td><td></td>
+            <td class="charge-cell" id="val-heat">0</td><td></td>
+            <td class="charge-cell" id="val-cap">0</td><td></td>
+            <td class="charge-cell bold" id="val-total">0</td><td></td>
+        </tr>
+        <tr class="total-acc-row">
+            <td style="text-align:left">Жалпы қарыз / Қалдық</td>
+            <td colspan="10" style="text-align:center">Төлемге - К оплате</td>
+            <td id="val-balance" class="bold">0</td>
+            <td style="background: #fff3cd; text-align: center;">
+                <a href="#" id="halyk-link" target="_blank" class="pay-btn">Halyk төлем</a>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    // URL-ден пәтер нөмірін оқу (мысалы: pater.html?id=9a)
+    const urlParams = new URLSearchParams(window.location.search);
+    const aptId = urlParams.get('id');
+
+    async function fetchData() {
+        if (!aptId) {
+            document.getElementById('loader').innerText = "Пәтер нөмірі көрсетілмеген!";
+            return;
+        }
+
+        try {
+            // Render-дегі базадан нақты пәтердің дерегін алу
+            const response = await fetch(`https://sk-bj.onrender.com/api/apartment/${aptId}`);
+            const data = await response.json();
+
+            // Деректерді кестеге толтыру
+            document.getElementById('apt-id').innerText = data.id;
+            document.getElementById('acc-number').innerText = data.account;
+            document.getElementById('apt-area').innerText = data.area;
+            document.getElementById('rate-text').innerText = data.isCommercial ? "60" : "40";
+            
+            // Есептеулер
+            document.getElementById('val-maint').innerText = data.currentBill.maint;
+            document.getElementById('val-clean').innerText = data.currentBill.clean;
+            document.getElementById('val-sec').innerText = data.currentBill.sec;
+            document.getElementById('val-heat').innerText = data.currentBill.heat;
+            document.getElementById('val-cap').innerText = data.currentBill.cap;
+            document.getElementById('val-total').innerText = data.currentBill.total;
+            document.getElementById('val-balance').innerText = data.balance;
+
+            // Төлем сілтемесін жасау
+            document.getElementById('halyk-link').href = `https://halykbank.kz/pay/${data.account}`;
+
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        } catch (error) {
+            document.getElementById('loader').innerText = "Деректерді жүктеу қатесі!";
+        }
+    }
+
+    fetchData();
+</script>
+</body>
+</html>
