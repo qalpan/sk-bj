@@ -1,7 +1,8 @@
-from import_export.admin import ImportExportModelAdmin
 from django.contrib import admin
-from .models import Property
+from .models import Property, BankPayment
 
-@admin.register(Property)
-class PropertyAdmin(ImportExportModelAdmin): # Осы жерін ауыстырдық
-    list_display = ('address', 'owner_name', 'area')
+@admin.register(BankPayment)
+class BankPaymentAdmin(admin.ModelAdmin):
+    list_display = ('property', 'amount', 'payer_name', 'date')
+    list_filter = ('date', 'property')
+    # Бұл жерде сіз CSV-ді жүктейтін сілтеме қоса аласыз
