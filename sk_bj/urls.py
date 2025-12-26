@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.urls import path
-from sk_bj import views
+from sk_bj import views  # views-ты импорттау
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('signup-special-access/', views.signup, name='signup'),
-    path('import-data/', views.import_json_data, name='import_data'), # ЖАҢА
+    path('import-data/', views.import_json_data, name='import_data'), # ОСЫ ЖОЛДЫ ТЕКСЕРІҢІЗ
 ]
