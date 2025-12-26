@@ -163,23 +163,27 @@ def import_from_json(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # Егер мәліметтер 'apartments' кілтінің ішінде болса
+            # Егер мәліметтер тікелей тізім болса немесе 'apartments' ішінде болса
             apartments_list = data.get('apartments', data) 
             
             for item in apartments_list:
+                # Сіздің JSON-да қарыздар 'debt' кілтінің ішінде тұр
+                debt_data = item.get('debt', {})
+                
                 Property.objects.update_or_create(
                     apartment_id=str(item.get('id')),
                     defaults={
                         'account_number': item.get('account'),
                         'area': item.get('area', 0.0),
-                        'debt_maint': item.get('debtMaint', 0.0),
-                        'debt_clean': item.get('debtClean', 0.0),
-                        'debt_sec': item.get('debtSec', 0.0),
-                        'debt_heat': item.get('debtHeat', 0.0),
-                        'debt_cap': item.get('debtCap', 0.0),
+                        # Мәліметтерді 'debt_data' ішінен нақты кілттермен аламыз
+                        'debt_maint': debt_data.get('maint', 0.0),
+                        'debt_clean': debt_data.get('clean', 0.0),
+                        'debt_sec': debt_data.get('sec', 0.0),
+                        'debt_heat': debt_data.get('heat', 0.0),
+                        'debt_cap': debt_data.get('cap', 0.0),
                     }
                 )
-            return JsonResponse({'status': 'success', 'message': f'{len(apartments_list)} пәтер жаңартылды'})
+            return JsonResponse({'status': 'success', 'message': f'{len(apartments_list)} пәтер деректері сәтті жаңартылды'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return render(request, 'import_page.html')
