@@ -13,7 +13,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'sk_bj', # Осы жерге өз папкаңызды қосасыз
+    'sk_bj.apps.SkBjConfig', # Осылай жазыңыз
 ]
 
 MIDDLEWARE = [
