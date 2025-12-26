@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aqsai3-10a - Жеке кабинетке кіру</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        .logo { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .btn { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #0056b3; }
+        .error { color: #dc3545; font-size: 14px; margin-bottom: 10px; }
+        .info { font-size: 12px; color: #666; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="logo">Aqsai3-10a</div>
+        <h3>Жеке кабинет</h3>
+        
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'resident_auth' %}">
+            {% csrf_token %}
+            <input type="text" name="apt_id" placeholder="Пәтер нөмірі (мысалы: 9а)" required>
+            <input type="password" name="password" placeholder="Құпия сөз" required>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="submit" name="action" value="login" class="btn">Кіру</button>
+                <button type="submit" name="action" value="signup" class="btn" style="background: #28a745;">Тіркелу</button>
+            </div>
+        </form>
+
+        <p class="info">Бірінші рет кірсеңіз, пәтер нөмірін жазып "Тіркелу" батырмасын басыңыз.</p>
+    </div>
+</body>
+</html>
