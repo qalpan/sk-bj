@@ -4,10 +4,10 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-# 1. Жобаның негізгі папкасын анықтаймыз
+# 1. Жобаның негізгі папкасын (root) анықтаймыз
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# 2. Сіз жүктеген файлдың нақты аты
+# 2. Сіздің жүктеген базаңыздың нақты аты
 DB_NAME = 'kz_tulem_database_2025-12-26.json'
 
 # 3. Файлды екі жерден іздейміз: негізгі папкадан немесе sk_bj ішінен
@@ -28,11 +28,11 @@ def load_data():
 def api_manager(request, apt_id=None):
     try:
         if request.method == 'GET':
-            # Егер /pater/ нөмірімен келсе, HTML көрсету
+            # Егер URL-де pater нөмірі болса, HTML көрсету
             if apt_id or 'pater' in request.path:
                 return render(request, 'pater.html', {'apt_id': apt_id})
             
-            # API деректерін беру
+            # API деректерін JSON түрінде беру
             data = load_data()
             return JsonResponse(data, safe=False)
 
