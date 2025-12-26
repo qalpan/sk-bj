@@ -36,6 +36,12 @@ class BankPayment(models.Model):
     external_id = models.CharField(max_length=255, unique=True)
 
 class Property(models.Model):
-    # ... бұрынғы өрістер ...
+    # ... бұрынғы бар өрістер (apartment_id, debt_maint т.б.) ...
     general_announcement = models.TextField(default="Төлемді уақытылы өтеуіңізді сұраймыз!", blank=True)
     private_note = models.TextField(null=True, blank=True)
+    # Хабарландырулар үшін жаңа өрістер
+    general_announcement = models.TextField(verbose_name="Жалпы хабарландыру", default="Төлемді уақытылы өтеуіңізді сұраймыз!", blank=True)
+    private_note = models.TextField(verbose_name="Жеке ескерту", null=True, blank=True)
+
+    def __str__(self):
+        return f"Пәтер {self.apartment_id}"
