@@ -6,96 +6,131 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; }
         .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .controls { display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: #e9ecef; border-radius: 8px; align-items: center; flex-wrap: wrap; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-card span { display: block; font-size: 20px; font-weight: bold; margin-top: 5px; }
+        .controls { display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: #e9ecef; border-radius: 8px; align-items: center; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; font-size: 13px; }
-        th { background: #2c3e50; color: white; }
-        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; color: white; }
+        th { background: #34495e; color: white; }
+        .footer-row { background: #ecf0f1; font-weight: bold; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
         .btn-save { background: #27ae60; }
         .btn-load { background: #3498db; }
-        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Тұрғын Үй Қаржысы: Әкімші Панелі</h2>
+    <h2>Тұрғын үй басқару жүйесі</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">Пәтерлер саны <span id="totalApts">0</span></div>
+        <div class="stat-card">Жалпы аудан <span id="totalArea">0 м²</span></div>
+        <div class="stat-card">Айлық есеп <span id="monthTotal">0 ₸</span></div>
+        <div class="stat-card">Жалпы қарыз <span id="overallDebt">0 ₸</span></div>
+    </div>
     
     <div class="controls">
-        <button class="btn btn-load" onclick="fetchData()">Базаны жаңарту</button>
-        <select id="monthSelector" onchange="renderTable()">
-            </select>
-        <button class="btn btn-save" onclick="saveData()">Өзгерістерді сақтау</button>
-        <span id="syncStatus">Статус: Дайын</span>
+        <button class="btn btn-load" onclick="fetchData()">🔄 Жаңарту</button>
+        <select id="monthSelector" onchange="renderTable()" style="padding:8px; border-radius:5px;"></select>
+        <button class="btn btn-save" onclick="saveData()">💾 Сақтау</button>
     </div>
 
-    <table id="mainTable">
+    <table>
         <thead>
             <tr>
                 <th>Пәтер №</th>
-                <th>Шаршы (м²)</th>
-                <th>Қызмет (Maint)</th>
+                <th>Аудан</th>
+                <th>Үй күтімі</th>
                 <th>Тазалық</th>
                 <th>Күзет</th>
                 <th>Жылу</th>
                 <th>Кап.жөндеу</th>
-                <th><b>Барлығы Қарыз</b></th>
-                <th>Әрекет</th>
+                <th><b>Айлық сома</b></th>
+                <th><b>Жалпы Қарыз</b></th>
             </tr>
         </thead>
         <tbody id="tableBody"></tbody>
+        <tfoot>
+            <tr class="footer-row" id="tableFooter"></tr>
+        </tfoot>
     </table>
 </div>
 
 <script>
     let db = { apartments: [] };
-    const API_URL = '/api/data/';
 
     async function fetchData() {
-        const res = await fetch(API_URL);
+        const res = await fetch('/api/data/');
         db = await res.json();
-        populateMonths();
+        const selector = document.getElementById('monthSelector');
+        const months = db.apartments[0].ledger.map(l => l.month);
+        selector.innerHTML = months.map((m, i) => `<option value="${i}" ${i===months.length-1?'selected':''}>${m}</option>`).join('');
         renderTable();
     }
 
-    function populateMonths() {
-        const selector = document.getElementById('monthSelector');
-        const months = db.apartments[0].ledger.map(l => l.month);
-        selector.innerHTML = months.map((m, i) => `<option value="${i}" ${i === months.length-1 ? 'selected' : ''}>${m}</option>`).join('');
-    }
-
     function renderTable() {
-        const monthIdx = document.getElementById('monthSelector').value;
+        const mIdx = document.getElementById('monthSelector').value;
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
+        
+        let totals = { area:0, maint:0, clean:0, sec:0, heat:0, cap:0, monthly:0, debt:0 };
 
         db.apartments.forEach(apt => {
-            const entry = apt.ledger[monthIdx];
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><b>${apt.id}</b></td>
-                <td>${apt.area}</td>
-                <td>${entry.charges.maint}</td>
-                <td>${entry.charges.clean}</td>
-                <td>${entry.charges.sec}</td>
-                <td>${entry.charges.heat}</td>
-                <td>${entry.charges.cap}</td>
-                <td style="color:red"><b>${entry.accumulated.overall} ₸</b></td>
-                <td><button onclick="window.open('/pater/${apt.id}/')">👁️</button></td>
+            const L = apt.ledger[mIdx];
+            totals.area += apt.area;
+            totals.maint += L.charges.maint;
+            totals.clean += L.charges.clean;
+            totals.sec += L.charges.sec;
+            totals.heat += L.charges.heat;
+            totals.cap += L.charges.cap;
+            totals.monthly += L.totalMonthlyCharge;
+            totals.debt += L.accumulated.overall;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${apt.id}</td>
+                    <td>${apt.area}</td>
+                    <td>${L.charges.maint}</td>
+                    <td>${L.charges.clean}</td>
+                    <td>${L.charges.sec}</td>
+                    <td>${L.charges.heat}</td>
+                    <td>${L.charges.cap}</td>
+                    <td style="background:#f9f9f9">${L.totalMonthlyCharge}</td>
+                    <td style="color:red"><b>${L.accumulated.overall}</b></td>
+                </tr>
             `;
-            tbody.appendChild(tr);
         });
+
+        // Статистиканы жаңарту
+        document.getElementById('totalApts').innerText = db.apartments.length;
+        document.getElementById('totalArea').innerText = totals.area.toFixed(1) + " м²";
+        document.getElementById('monthTotal').innerText = totals.monthly.toLocaleString() + " ₸";
+        document.getElementById('overallDebt').innerText = totals.debt.toLocaleString() + " ₸";
+
+        // Кесте астындағы қорытынды
+        document.getElementById('tableFooter').innerHTML = `
+            <td>Жалпы:</td>
+            <td>${totals.area.toFixed(1)}</td>
+            <td>${totals.maint.toFixed(0)}</td>
+            <td>${totals.clean.toFixed(0)}</td>
+            <td>${totals.sec.toFixed(0)}</td>
+            <td>${totals.heat.toFixed(0)}</td>
+            <td>${totals.cap.toFixed(0)}</td>
+            <td>${totals.monthly.toFixed(0)}</td>
+            <td style="color:red">${totals.debt.toFixed(0)}</td>
+        `;
     }
 
     async function saveData() {
-        await fetch(API_URL, {
+        await fetch('/api/data/', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(db)
         });
-        alert("Сақталды!");
+        alert("Сәтті сақталды!");
     }
-
     window.onload = fetchData;
 </script>
 </body>
