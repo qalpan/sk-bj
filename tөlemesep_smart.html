@@ -2,35 +2,34 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>Aqsai3-10a Smart Қаржы Панелі</title>
+    <title>Админ Панель: Smart Есептеу</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; margin: 20px; font-size: 14px; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f9f9f9; padding: 15px; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background: #34495e; color: white; }
-        tr:nth-child(even) { background: #f2f2f2; }
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-blue { background: #3498db; }
-        .btn-green { background: #27ae60; }
-        .btn-orange { background: #f39c12; }
-        .commercial { background: #fff3cd !important; font-weight: bold; }
-        .modal { display:none; position:fixed; top:20%; left:30%; width:40%; background:white; padding:20px; border:2px solid #333; z-index:100; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .controls { display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: #e9ecef; border-radius: 8px; align-items: center; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; }
+        th { background: #2c3e50; color: white; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; color: white; }
+        .btn-save { background: #27ae60; }
+        .btn-split { background: #f39c12; }
+        .btn-load { background: #3498db; }
+        .commercial-row { background: #fff3cd !important; font-weight: bold; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:30px; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index:1000; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Тұрғын Үй Қаржысын Басқару (Smart Жүйе)</h2>
+    <h2>Тұрғын Үй Қаржысын Басқару (Smart Панель)</h2>
     
     <div class="controls">
-        <button class="btn btn-blue" onclick="document.getElementById('aptFile').click()">Базаны жүктеу (.json)</button>
-        <input type="file" id="aptFile" style="display:none" onchange="loadData(event)">
-        <button class="btn btn-green" onclick="saveData()">Базаны сақтау (.json)</button>
-        <button class="btn btn-orange" onclick="showSplitModal()">Пәтерді Бөлу (Split)</button>
-        <span>Бүгін: <b id="todayDate"></b></span>
+        <button class="btn btn-load" onclick="fetchDataFromServer()">Базаны Render-ден Жүктеу</button>
+        <button class="btn btn-save" onclick="saveDataToServer()">Өзгерістерді Render-ге Сақтау</button>
+        <button class="btn btn-split" onclick="openSplitModal()">Пәтерді Бөлу (Split)</button>
+        <span id="syncStatus">Статус: Күтуде...</span>
     </div>
 
     <table id="mainTable">
@@ -39,162 +38,122 @@
                 <th>Пәтер №</th>
                 <th>Дербес Шот</th>
                 <th>Аудан (м²)</th>
-                <th>Тариф (тңг)</th>
+                <th>Тариф</th>
                 <th>Қызметтер</th>
-                <th>Соңғы есеп (Ай)</th>
-                <th>Сомасы</th>
+                <th>Ағымдағы Қарыз</th>
                 <th>Әрекет</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-            </tbody>
+        <tbody id="tableBody"></tbody>
     </table>
 </div>
 
 <div id="splitModal" class="modal">
-    <h3>Пәтерді бөлу (9 -> 9 + 9а)</h3>
-    <label>Ескі пәтер №: </label><input type="text" id="oldAptId"><br><br>
-    <label>1-ші жаңа аудан: </label><input type="number" id="area1" step="0.1"><br><br>
-    <label>2-ші жаңа аудан (9а): </label><input type="number" id="area2" step="0.1"><br><br>
-    <label>Бөлінген күні: </label><input type="date" id="splitDate"><br><br>
-    <button class="btn btn-green" onclick="processSplit()">Орындау</button>
-    <button class="btn btn-orange" onclick="this.parentElement.style.display='none'">Жабу</button>
+    <h3>Пәтерді Бөлу Логикасы</h3>
+    <p>Мысалы: 9 пәтерді 9 және 9а-ға бөлу</p>
+    <input type="text" id="splitOldId" placeholder="Ескі пәтер № (ID)">
+    <input type="number" id="splitArea1" placeholder="Жаңа аудан 1 (м²)" step="0.1">
+    <input type="number" id="splitArea2" placeholder="Жаңа аудан 2 (м²)" step="0.1">
+    <br><br>
+    <button class="btn btn-save" onclick="executeSplit()">Бөлуді Растау</button>
+    <button class="btn btn-load" onclick="closeSplitModal()" style="background:#95a5a6">Болдырмау</button>
 </div>
 
 <script>
     let apartments = [];
-    let commercialApts = ["1", "15", "16"]; // Коммерциялық пәтерлер тізімі
+    const API_URL = 'https://sk-bj.onrender.com/api'; // Сіздің Render адресіңіз
 
-    document.getElementById('todayDate').innerText = new Date().toLocaleDateString();
-
-    // 1. Деректерді жүктеу
-    function loadData(event) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            apartments = JSON.parse(e.target.result);
-            checkAndAutoBilling(); // Жүктегенде автоматты есептеуді тексеру
+    // 1. СЕРВЕРДЕН ДЕРЕКТЕРДІ АЛУ
+    async function fetchDataFromServer() {
+        document.getElementById('syncStatus').innerText = "Жүктелуде...";
+        try {
+            const response = await fetch(`${API_URL}/get-all-apartments`);
+            apartments = await response.json();
             renderTable();
-        };
-        reader.readAsText(event.target.files[0]);
-    }
-
-    // 2. Автоматты есептеу логикасы (Айдың 1-і)
-    function checkAndAutoBilling() {
-        const today = new Date();
-        const currentMonth = today.toISOString().slice(0, 7); // "2025-06"
-
-        if (today.getDate() >= 1) { // Ай басталғанда
-            apartments.forEach(apt => {
-                if (!apt.billingHistory) apt.billingHistory = [];
-                
-                // Егер бұл айға әлі есеп жүрмесе
-                const alreadyBilled = apt.billingHistory.some(h => h.month === currentMonth);
-                if (!alreadyBilled) {
-                    const bill = calculateCurrentBill(apt);
-                    apt.billingHistory.push({
-                        month: currentMonth,
-                        amount: bill.total,
-                        details: bill
-                    });
-                }
-            });
+            document.getElementById('syncStatus').innerText = "Статус: Деректер жаңартылды";
+        } catch (e) {
+            alert("Серверге қосылу мүмкін болмады!");
         }
     }
 
-    // 3. Тариф пен Соманы есептеу
-    function calculateCurrentBill(apt) {
-        const isComm = commercialApts.includes(apt.id);
-        const rate = isComm ? 60 : 40;
-        const area = apt.currentArea || apt.area;
-
-        const results = {
-            maint: area * rate,
-            clean: apt.services.clean ? 850 : 0,
-            sec: apt.services.sec ? 300 : 0,
-            heat: area * 5,
-            cap: area * 40
-        };
-        results.total = Object.values(results).reduce((a, b) => a + b, 0);
-        return results;
+    // 2. ТАРИФТІ АВТОМАТТЫ АНЫҚТАУ (ID БОЙЫНША)
+    function getRate(aptId) {
+        const commercial = ["1", "15", "16"];
+        return commercial.includes(aptId.toString()) ? 60 : 40;
     }
 
-    // 4. Кестені шығару
+    // 3. КЕСТЕНІ ШЫҒАРУ
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
         apartments.forEach((apt, index) => {
-            const isComm = commercialApts.includes(apt.id);
-            const bill = calculateCurrentBill(apt);
-            const lastBilling = apt.billingHistory && apt.billingHistory.length > 0 
-                                ? apt.billingHistory[apt.billingHistory.length-1] : { month: '-', amount: 0 };
-
+            const rate = getRate(apt.id);
             const tr = document.createElement('tr');
-            if (isComm) tr.className = 'commercial';
+            if (rate === 60) tr.className = 'commercial-row';
 
             tr.innerHTML = `
-                <td>${apt.id}</td>
-                <td>${apt.account}</td>
+                <td><b>${apt.id}</b></td>
+                <td>${apt.account || '<small><i>Жоқ</i></small>'}</td>
                 <td>${apt.area} м²</td>
-                <td>${isComm ? 60 : 40}</td>
+                <td>${rate} тңг</td>
+                <td>${apt.services.sec ? '📹' : ''} ${apt.services.clean ? '🧹' : ''}</td>
+                <td>${apt.balance} тңг</td>
                 <td>
-                    <small>Тазалық: ${apt.services.clean ? '✅' : '❌'}<br>
-                    Бейне: ${apt.services.sec ? '✅' : '❌'}</small>
-                </td>
-                <td>${lastBilling.month}</td>
-                <td><b>${lastBilling.amount.toLocaleString()} тңг</b></td>
-                <td>
-                    <button class="btn btn-blue" onclick="toggleService(${index}, 'sec')">Бейне +/-</button>
+                    <button onclick="viewReceipt('${apt.id}')">👁️ Көру</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // 5. Қызметті өшіру/қосу
-    function toggleService(index, service) {
-        apartments[index].services[service] = !apartments[index].services[service];
+    // 4. ПӘТЕРДІ БӨЛУ (SPLIT)
+    function openSplitModal() { document.getElementById('splitModal').style.display = 'block'; }
+    function closeSplitModal() { document.getElementById('splitModal').style.display = 'none'; }
+
+    function executeSplit() {
+        const oldId = document.getElementById('splitOldId').value;
+        const area1 = parseFloat(document.getElementById('splitArea1').value);
+        const area2 = parseFloat(document.getElementById('splitArea2').value);
+
+        const idx = apartments.findIndex(a => a.id === oldId);
+        if (idx === -1) return alert("Пәтер табылмады!");
+
+        // 9а пәтерін жасау
+        const newApt = {
+            id: oldId + "а",
+            account: "", // Дербес шот әзірге бос
+            area: area2,
+            balance: 0,
+            services: { ...apartments[idx].services },
+            history: []
+        };
+
+        apartments[idx].area = area1; // Ескі пәтер ауданын азайту
+        apartments.push(newApt);
+
         renderTable();
+        closeSplitModal();
+        alert(`${oldId} пәтері екіге бөлінді. Енді Render-ге сақтауды басыңыз.`);
     }
 
-    // 6. Пәтерді бөлу (Split)
-    function showSplitModal() { document.getElementById('splitModal').style.display='block'; }
-
-    function processSplit() {
-        const id = document.getElementById('oldAptId').value;
-        const a1 = parseFloat(document.getElementById('area1').value);
-        const a2 = parseFloat(document.getElementById('area2').value);
-        
-        const aptIdx = apartments.findIndex(a => a.id === id);
-        if (aptIdx === -1) return alert("Пәтер табылмады!");
-
-        const oldApt = apartments[aptIdx];
-        
-        // Жаңа 9а пәтерін қосу
-        apartments.push({
-            id: id + "а",
-            account: oldApt.account + "A",
-            area: a2,
-            services: {...oldApt.services},
-            billingHistory: []
-        });
-
-        // Ескі пәтердің ауданын жаңарту
-        oldApt.area = a1;
-        
-        document.getElementById('splitModal').style.display='none';
-        renderTable();
-        alert("Бөліну сәтті орындалды. Енді 1-ші жұлдызда жаңа ауданмен есептеледі.");
+    // 5. СЕРВЕРГЕ САҚТАУ
+    async function saveDataToServer() {
+        document.getElementById('syncStatus').innerText = "Сақталуда...";
+        try {
+            const response = await fetch(`${API_URL}/save-data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(apartments)
+            });
+            if (response.ok) alert("Барлық өзгерістер Render базасына сәтті жазылды!");
+        } catch (e) {
+            alert("Сақтау кезінде қате шықты!");
+        }
     }
 
-    // 7. Сақтау
-    function saveData() {
-        const data = JSON.stringify(apartments, null, 2);
-        const blob = new Blob([data], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "Paterler_Bazasy_Smart.json";
-        a.click();
+    function viewReceipt(id) {
+        window.open(`pater.html?id=${id}`, '_blank');
     }
 </script>
 
