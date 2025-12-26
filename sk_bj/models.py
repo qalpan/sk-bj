@@ -41,20 +41,24 @@ class Payment(models.Model):
 from django.db import models
 
 class Property(models.Model):
-    address = models.CharField("Мекенжай", max_length=255)
-    owner_name = models.CharField("Иесі", max_length=100)
-    area = models.DecimalField("Аудан (м2)", max_digits=10, decimal_places=2)
-    account_number = models.CharField("Дербес шот", max_length=20, unique=True, null=True, blank=True)
+    address = models.CharField(max_length=255)
+    owner_name = models.CharField(max_length=100)
+    area = models.DecimalField(max_digits=10, decimal_places=2)
+    # ЖАҢА: Дербес шотты сақтау үшін
+    account_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.address} - {self.account_number}"
+        return f"{self.address} ({self.account_number})"
 
+# ЖАҢА: Банк төлемдерін сақтау үшін
 class BankPayment(models.Model):
     property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='payments')
-    date = models.DateTimeField("Төлем күні")
-    amount = models.DecimalField("Сома", max_digits=15, decimal_places=2)
-    payer_name = models.CharField("Төлеуші", max_length=255)
-    external_id = models.CharField("Транзакция ID", max_length=100, unique=True) # Қайталап жүктемеу үшін
+    date = models.DateTimeField(auto_now_add=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    payer_name = models.CharField(max_length=255)
+    external_id = models.CharField(max_length=100, unique=True) 
 
+    def __str__(self):
+        return f"{self.amount} тг - {self.payer_name}"
     def __str__(self):
         return f"{self.property.account_number}: {self.amount} тг"
