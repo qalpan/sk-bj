@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <title>Төлем Түбіртегі: {{ prop.apartment_id }}</title>
+    <style>
+        body { font-family: Arial, serif; font-size: 12px; color: #424242; line-height: 1.4; }
+        .receipt-container { max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
+        
+        /* Хабарландыру стилі */
+        .announcement-box { 
+            background: #fff5f5; border: 2px solid #ed1c24; 
+            padding: 15px; margin-bottom: 20px; border-radius: 8px; 
+        }
+        .private-note { 
+            background: #e7f3ff; padding: 10px; 
+            border-left: 5px solid #007bff; margin-top: 10px; 
+        }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 20px; }
+        th, td { border: 1px solid #a3a3a3; padding: 6px; text-align: right; }
+        .header-info { text-align: left; border: none; font-size: 13px; }
+        .month-title { font-size: 16px; font-weight: bold; color: #333; }
+        
+        .charge-cell { background-color: #f8f8f8; }
+        .total-row { background-color: #ffe082; font-weight: bold; }
+        
+        /* Батырмалар */
+        .pay-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+        .btn-pay { 
+            padding: 12px 25px; border-radius: 8px; text-decoration: none; 
+            font-weight: bold; color: white; display: inline-block; 
+        }
+        .kaspi { background: #ed1c24; }
+        .halyk { background: #00a040; }
+    </style>
+</head>
+<body>
+
+<div class="receipt-container">
+    <div class="announcement-box">
+        <h3 style="color: #ed1c24; margin: 0 0 5px 0;">📢 ОСИ Хабарландыруы:</h3>
+        <p style="margin: 0;">{{ prop.general_announcement }}</p>
+        
+        {% if prop.private_note %}
+        <div class="private-note">
+            <strong>🔔 Жеке ескерту:</strong> {{ prop.private_note }}
+        </div>
+        {% endif %}
+    </div>
+
+    <table>
+        <tr>
+            <td class="header-info" style="width: 50%">
+                <span class="month-title">{{ month }}</span><br>
+                Дербес шот: <strong>{{ prop.account_number }}</strong><br>
+                Мекенжай: Aqsai-3, 10a, <strong>{{ prop.apartment_id }}-пәтер</strong><br>
+                Ауданы: {{ prop.area }} м2
+            </td>
+            <td colspan="2" style="border: none; text-align: right; vertical-align: top;">
+                <h2 style="margin: 0; color: #555;">ТӨЛЕМ ТҮБІРТЕГІ</h2>
+            </td>
+        </tr>
+    </table>
+
+    <table>
+        <thead>
+            <tr style="background: #eee;">
+                <th style="text-align: left;">Қызмет түрі</th>
+                <th>Қарыз (алдыңғы)</th>
+                <th>Есептелді</th>
+                <th>Төленді</th>
+                <th>Жиынтық қарыз</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="text-align: left;">Үй күтімі (ПИК/ОСИ)</td>
+                <td>-</td>
+                <td class="charge-cell">{{ prop.debt_maint }}</td>
+                <td>-</td>
+                <td class="bold">{{ prop.debt_maint }}</td>
+            </tr>
+            <tr>
+                <td style="text-align: left;">Тазалық</td>
+                <td>-</td>
+                <td class="charge-cell">{{ prop.debt_clean }}</td>
+                <td>-</td>
+                <td class="bold">{{ prop.debt_clean }}</td>
+            </tr>
+            <tr>
+                <td style="text-align: left;">Бейнебақылау</td>
+                <td>-</td>
+                <td class="charge-cell">{{ prop.debt_sec }}</td>
+                <td>-</td>
+                <td class="bold">{{ prop.debt_sec }}</td>
+            </tr>
+            <tr>
+                <td style="text-align: left;">Жылу (есепт.)</td>
+                <td>-</td>
+                <td class="charge-cell">{{ prop.debt_heat }}</td>
+                <td>-</td>
+                <td class="bold">{{ prop.debt_heat }}</td>
+            </tr>
+            <tr>
+                <td style="text-align: left;">Күрделі жөндеу</td>
+                <td>-</td>
+                <td class="charge-cell">{{ prop.debt_cap }}</td>
+                <td>-</td>
+                <td class="bold">{{ prop.debt_cap }}</td>
+            </tr>
+            <tr class="total-row">
+                <td style="text-align: left;">БАРЛЫҒЫ</td>
+                <td>-</td>
+                <td colspan="2">Төлеуге:</td>
+                <td style="font-size: 14px;">{{ prop.total_debt }} ₸</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="pay-buttons">
+        <a href="{{ kaspi_url }}" target="_blank" class="btn-pay kaspi">Kaspi-мен төлеу</a>
+        <a href="{{ halyk_url }}" target="_blank" class="btn-pay halyk">Halyk-пен төлеу</a>
+    </div>
+
+    <div style="margin-top: 20px; font-size: 10px; color: #888; text-align: center;">
+        Бұл құжат электронды түрде жасалған және мөрсіз жарамды.
+    </div>
+</div>
+
+</body>
+</html>
