@@ -55,45 +55,59 @@ def import_json_data(request):
 def upload_bank_file(request):
     if request.method == 'POST' and request.FILES.get('bank_file'):
         file = request.FILES['bank_file']
-        decoded_file = file.read().decode('utf-8')
+        # Файлды оқу
+        try:
+            decoded_file = file.read().decode('utf-8-sig') # utf-8-sig Excel файлдарындағы қателерді түзетеді
+        except UnicodeDecodeError:
+            decoded_file = file.read().decode('cp1251') # Егер utf-8 болмаса, қазақша шрифттерді осылай оқимыз
+            
         io_string = io.StringIO(decoded_file)
-        
-        # Бірінші жол баған атаулары емес болса, оны өткізіп жіберу үшін:
         lines = io_string.readlines()
-        if len(lines) > 0 and 'РЕЕСТР' in lines[0]:
-            io_string = io.StringIO("".join(lines[1:]))
+
+        # Егер бұл Kaspi-дің реестрі болса (бірінші жолын өткізіп жібереміз)
+        if len(lines) > 0 and ("РЕЕСТР" in lines[0] or "системе электронного" in lines[0]):
+            csv_data = "".join(lines[1:])
         else:
-            io_string = io.StringIO("".join(lines))
+            csv_data = "".join(lines)
 
         reader = csv.DictReader(io_string)
-        count = 0
+        io_string = io.StringIO(csv_data)
+        reader = csv.DictReader(io_string)
         
+        count = 0
         for row in reader:
-            try:
-                # Баған аттарын бірнеше нұсқада іздейміз (Kaspi және Halyk үшін)
-                account = row.get('Лицевой номер') or row.get('Лицевой счет')
-                amount = row.get('Сумма')
-                payer = row.get('ФИО') or row.get('ФИО плательщика')
-                
-                if not account or not amount:
-                    continue
+            # Әртүрлі банктердің баған атауларын тексеру
+            account = row.get('Лицевой номер') or row.get('Лицевой счет')
+            amount_raw = row.get('Сумма')
+            payer = row.get('ФИО') or row.get('ФИО плательщика')
+            
+            # Егер жол бос болса немесе "Общая сумма" деген сияқты қорытынды жол болса өткізіп жібереміз
+            if not account or not amount_raw or "Общая" in str(account):
+                continue
 
-                # Пәтерді базадан іздеу
+            try:
+                # Мәтінді санға айналдыру
+                amount = float(str(amount_raw).replace(',', '.'))
+                
+                # Базадан пәтерді іздеу
                 prop = Property.objects.get(account_number=account.strip())
                 
-                # Төлемді жазу
+                # Төлемді базаға қосу
                 BankPayment.objects.get_or_create(
                     property=prop,
-                    amount=float(amount),
-                    payer_name=payer or "Белгісіз",
-                    external_id=f"{account}_{amount}_{payer}"
+                    amount=amount,
+                    payer_name=payer.strip() if payer else "Белгісіз",
+                    external_id=f"{account.strip()}_{amount}_{payer}_{row.get('Дата', '')}"
                 )
                 count += 1
+            except Property.DoesNotExist:
+                print(f"Пәтер табылмады: {account}")
+                continue
             except Exception as e:
-                print(f"Қате: {e}")
+                print(f"Жолды өңдеуде қате: {e}")
                 continue
         
-        messages.success(request, f"{count} төлем сәтті жүктелді!")
+        messages.success(request, f"{count} төлем сәтті өңделді!")
         return redirect('/admin/sk_bj/bankpayment/')
     
     return render(request, 'upload.html')
