@@ -31,3 +31,9 @@ class Invoice(models.Model):
                 total += t.rate
         self.total_amount = total
         super().save(*args, **kwargs)
+        
+class Payment(models.Model):
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    date = models.DateField()
+    bank_reference = models.CharField(max_length=255, unique=True) # Банктегі транзакция нөмірі (қайталанбау үшін)
