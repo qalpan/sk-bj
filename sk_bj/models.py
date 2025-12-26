@@ -34,3 +34,8 @@ class BankPayment(models.Model):
     payment_date = models.DateTimeField(auto_now_add=True)
     payer_name = models.CharField(max_length=255)
     external_id = models.CharField(max_length=255, unique=True)
+
+class Property(models.Model):
+    # ... бұрынғы өрістер ...
+    general_announcement = models.TextField(default="Төлемді уақытылы өтеуіңізді сұраймыз!", blank=True)
+    private_note = models.TextField(null=True, blank=True)
