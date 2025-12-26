@@ -60,41 +60,35 @@
     const urlParams = new URLSearchParams(window.location.search);
     const aptId = urlParams.get('id');
 
-    async function fetchData() {
-        if (!aptId) {
-            document.getElementById('loader').innerText = "Пәтер нөмірі көрсетілмеген!";
+// pater.html ішіндегі іздеу функциясы
+async function fetchData() {
+    // URL-ден тек пәтер нөмірін аламыз: pater.html?id=9a
+    const urlParams = new URLSearchParams(window.location.search);
+    const aptId = urlParams.get('id'); 
+
+    if (!aptId) {
+        document.getElementById('loader').innerText = "Пәтер нөмірін енгізіңіз!";
+        return;
+    }
+
+    try {
+        // Серверден пәтер нөмірі (ID) бойынша іздеу
+        const response = await fetch(`https://sk-bj.onrender.com/api/get-by-apt-id/${aptId}`);
+        const data = await response.json();
+
+        if (!data) {
+            document.getElementById('loader').innerText = "Мұндай пәтер табылмады!";
             return;
         }
 
-        try {
-            // Render-дегі базадан нақты пәтердің дерегін алу
-            const response = await fetch(`https://sk-bj.onrender.com/api/apartment/${aptId}`);
-            const data = await response.json();
-
-            // Деректерді кестеге толтыру
-            document.getElementById('apt-id').innerText = data.id;
-            document.getElementById('acc-number').innerText = data.account;
-            document.getElementById('apt-area').innerText = data.area;
-            document.getElementById('rate-text').innerText = data.isCommercial ? "60" : "40";
-            
-            // Есептеулер
-            document.getElementById('val-maint').innerText = data.currentBill.maint;
-            document.getElementById('val-clean').innerText = data.currentBill.clean;
-            document.getElementById('val-sec').innerText = data.currentBill.sec;
-            document.getElementById('val-heat').innerText = data.currentBill.heat;
-            document.getElementById('val-cap').innerText = data.currentBill.cap;
-            document.getElementById('val-total').innerText = data.currentBill.total;
-            document.getElementById('val-balance').innerText = data.balance;
-
-            // Төлем сілтемесін жасау
-            document.getElementById('halyk-link').href = `https://halykbank.kz/pay/${data.account}`;
-
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('content').style.display = 'block';
-        } catch (error) {
-            document.getElementById('loader').innerText = "Деректерді жүктеу қатесі!";
-        }
+        // Егер дербес шот (account) базада болмаса, "Бөлінбеген" деп көрсету
+        document.getElementById('acc-number').innerText = data.account || "Дербес шот анықталмаған";
+        document.getElementById('apt-id').innerText = data.id;
+        // ... қалған деректерді толтыру
+    } catch (error) {
+        console.error("Қате:", error);
     }
+}
 
     fetchData();
 </script>
