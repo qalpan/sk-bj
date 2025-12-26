@@ -3,22 +3,16 @@ import os
 import sys
 
 def main():
+    """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sk_bj.settings')
     try:
         from django.core.management import execute_from_command_line
-        # Админ жасау блогы осы жерде болуы керек
-        from django.db import connection
-        from django.contrib.auth.models import User
-        
-        # База дайын болғанда ғана админ жасаймыз
-        execute_from_command_line(['manage.py', 'migrate']) # Базаны алдын ала дайындау
-        
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser('admin', 'admin@example.com', 'pass1234')
-            print("Админ сәтті жасалды: Логин - admin, Пароль - pass1234")
-            
     except ImportError as exc:
-        raise ImportError("Django табылмады!") from exc
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
     execute_from_command_line(sys.argv)
 
 if __name__ == '__main__':
