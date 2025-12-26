@@ -51,3 +51,34 @@ def upload_bank_file(request):
         return redirect('/admin/sk_bj/bankpayment/') # Төлемдер тізіміне қайтару
     
     return render(request, 'upload.html')
+
+import json
+import os
+from django.conf import settings
+from django.http import HttpResponse
+from .models import Property
+
+def import_json_data(request):
+    json_path = os.path.join(settings.BASE_DIR, 'kz_tulem_database_2025-12-26.json')
+    
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    count = 0
+    for apt in data['apartments']:
+        Property.objects.update_or_create(
+            apartment_id=apt['id'],
+            defaults={
+                'account_number': apt['account'],
+                'address': f"{apt['id']}-пәтер",
+                'area': apt['area'],
+                'debt_maint': apt['initialDebt']['maint'],
+                'debt_clean': apt['initialDebt']['clean'],
+                'debt_sec': apt['initialDebt']['sec'],
+                'debt_heat': apt['initialDebt']['heat'],
+                'debt_cap': apt['initialDebt']['cap'],
+            }
+        )
+        count += 1
+    
+    return HttpResponse(f"Сәтті аяқталды! {count} пәтер базаға жүктелді.")
