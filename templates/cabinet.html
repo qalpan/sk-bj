@@ -38,7 +38,15 @@
         <h4>📋 Құжаттар мен хабарламалар:</h4>
         <p>Жақында бұл жерде сіздің түбіртектеріңіз бен ОСИ есептері пайда болады.</p>
     </div>
-
+<div style="margin-top: 20px; text-align: center;">
+    <a href="{% url 'generate_receipt' %}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
+        📄 Түбіртекті жүктеу / Көру
+    </a>
+    <br>
+    <a href="https://kaspi.kz/pay/OSI_AKSAI_3_10A?service=1&apt={{ property.apartment_id }}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ed1c24; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+        💳 Kaspi-мен төлеу
+    </a>
+</div>
     <a href="{% url 'resident_auth' %}" class="logout">🚪 Шығу</a>
 </div>
 
