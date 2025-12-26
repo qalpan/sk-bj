@@ -2,44 +2,44 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>Smart Админ Панель</title>
+    <title>Smart Админ Панель 2025</title>
     <style>
-        /* Стилистикаңызды сол күйі қалдырдым, ол өте ыңғайлы */
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; }
         .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .controls { display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: #e9ecef; border-radius: 8px; align-items: center; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; }
+        .controls { display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: #e9ecef; border-radius: 8px; align-items: center; flex-wrap: wrap; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #dee2e6; padding: 10px; text-align: center; font-size: 13px; }
         th { background: #2c3e50; color: white; }
-        tr:nth-child(even) { background: #f8f9fa; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; color: white; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; color: white; }
         .btn-save { background: #27ae60; }
-        .btn-split { background: #f39c12; }
         .btn-load { background: #3498db; }
-        .commercial-row { background: #fff3cd !important; font-weight: bold; }
-        .modal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:30px; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index:1000; border: 1px solid #ccc; }
+        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Тұрғын Үй Қаржысын Басқару (Smart Панель)</h2>
+    <h2>Тұрғын Үй Қаржысы: Әкімші Панелі</h2>
     
     <div class="controls">
-        <button class="btn btn-load" onclick="fetchDataFromServer()">Базаны Render-ден Жүктеу</button>
-        <button class="btn btn-save" onclick="saveDataToServer()">Өзгерістерді Render-ге Сақтау</button>
-        <button class="btn btn-split" onclick="openSplitModal()">Пәтерді Бөлу (Split)</button>
-        <span id="syncStatus">Статус: Күтуде...</span>
+        <button class="btn btn-load" onclick="fetchData()">Базаны жаңарту</button>
+        <select id="monthSelector" onchange="renderTable()">
+            </select>
+        <button class="btn btn-save" onclick="saveData()">Өзгерістерді сақтау</button>
+        <span id="syncStatus">Статус: Дайын</span>
     </div>
 
     <table id="mainTable">
         <thead>
             <tr>
                 <th>Пәтер №</th>
-                <th>Дербес Шот</th>
-                <th>Аудан (м²)</th>
-                <th>Тариф</th>
-                <th>Ағымдағы Қарыз</th>
+                <th>Шаршы (м²)</th>
+                <th>Қызмет (Maint)</th>
+                <th>Тазалық</th>
+                <th>Күзет</th>
+                <th>Жылу</th>
+                <th>Кап.жөндеу</th>
+                <th><b>Барлығы Қарыз</b></th>
                 <th>Әрекет</th>
             </tr>
         </thead>
@@ -47,105 +47,56 @@
     </table>
 </div>
 
-<div id="splitModal" class="modal">
-    <h3>Пәтерді Бөлу (Split)</h3>
-    <input type="text" id="splitOldId" placeholder="Ескі пәтер № (ID)">
-    <input type="number" id="splitArea1" placeholder="Аудан 1 (м²)" step="0.01">
-    <input type="number" id="splitArea2" placeholder="Аудан 2 (м²)" step="0.01">
-    <br><br>
-    <button class="btn btn-save" onclick="executeSplit()">Растау</button>
-    <button class="btn" onclick="closeSplitModal()" style="background:#95a5a6">Жабу</button>
-</div>
-
 <script>
-    let apartments = [];
-    // ЫҚШАМДАЛҒАН API ЖОЛЫ
-    const API_URL = '/api/data/'; 
+    let db = { apartments: [] };
+    const API_URL = '/api/data/';
 
-    async function fetchDataFromServer() {
-        document.getElementById('syncStatus').innerText = "Жүктелуде...";
-        try {
-            const response = await fetch(API_URL);
-            apartments = await response.json();
-            renderTable();
-            document.getElementById('syncStatus').innerText = "Статус: Жаңартылды";
-        } catch (e) {
-            alert("Қате: Базаны алу мүмкін болмады!");
-        }
+    async function fetchData() {
+        const res = await fetch(API_URL);
+        db = await res.json();
+        populateMonths();
+        renderTable();
     }
 
-    function getRate(aptId) {
-        return ["1", "15", "16"].includes(aptId.toString()) ? 60 : 40;
+    function populateMonths() {
+        const selector = document.getElementById('monthSelector');
+        const months = db.apartments[0].ledger.map(l => l.month);
+        selector.innerHTML = months.map((m, i) => `<option value="${i}" ${i === months.length-1 ? 'selected' : ''}>${m}</option>`).join('');
     }
 
     function renderTable() {
+        const monthIdx = document.getElementById('monthSelector').value;
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        apartments.forEach((apt) => {
-            const rate = getRate(apt.id);
+
+        db.apartments.forEach(apt => {
+            const entry = apt.ledger[monthIdx];
             const tr = document.createElement('tr');
-            if (rate === 60) tr.className = 'commercial-row';
             tr.innerHTML = `
                 <td><b>${apt.id}</b></td>
-                <td>${apt.account || '---'}</td>
-                <td>${apt.area} м²</td>
-                <td>${rate} тңг</td>
-                <td>${apt.balance} тңг</td>
-                <td>
-                    <button onclick="viewReceipt('${apt.id}')">👁️ Түбіртек</button>
-                </td>
+                <td>${apt.area}</td>
+                <td>${entry.charges.maint}</td>
+                <td>${entry.charges.clean}</td>
+                <td>${entry.charges.sec}</td>
+                <td>${entry.charges.heat}</td>
+                <td>${entry.charges.cap}</td>
+                <td style="color:red"><b>${entry.accumulated.overall} ₸</b></td>
+                <td><button onclick="window.open('/pater/${apt.id}/')">👁️</button></td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    function openSplitModal() { document.getElementById('splitModal').style.display = 'block'; }
-    function closeSplitModal() { document.getElementById('splitModal').style.display = 'none'; }
-
-    function executeSplit() {
-        const oldId = document.getElementById('splitOldId').value;
-        const a1 = parseFloat(document.getElementById('splitArea1').value);
-        const a2 = parseFloat(document.getElementById('splitArea2').value);
-
-        const idx = apartments.findIndex(a => a.id.toString() === oldId.toString());
-        if (idx === -1) return alert("Пәтер табылмады!");
-
-        // Жаңа 9а пәтерін жасау
-        const newApt = JSON.parse(JSON.stringify(apartments[idx]));
-        newApt.id = oldId + "а";
-        newApt.area = a2;
-        newApt.balance = 0; // Жаңа пәтер таза баланспен басталады
-        newApt.account = ""; // Жаңа дербес шот
-
-        apartments[idx].area = a1; // Ескі пәтер ауданын азайту
-        apartments.push(newApt);
-
-        renderTable();
-        closeSplitModal();
-        alert("Бөлінді! Енді 'Сақтау' батырмасын басыңыз.");
+    async function saveData() {
+        await fetch(API_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(db)
+        });
+        alert("Сақталды!");
     }
 
-    async function saveDataToServer() {
-        document.getElementById('syncStatus').innerText = "Сақталуда...";
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(apartments)
-            });
-            if (response.ok) alert("Render базасына сәтті сақталды!");
-        } catch (e) {
-            alert("Сақтау қатесі!");
-        }
-    }
-
-    function viewReceipt(id) {
-        // Тұрғын бетіне өту
-        window.open(`/pater/${id}/`, '_blank');
-    }
-
-    // Бет ашылғанда базаны бірден жүктеу
-    window.onload = fetchDataFromServer;
+    window.onload = fetchData;
 </script>
 </body>
 </html>
