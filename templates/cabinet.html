@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Жеке кабинет - Пәтер {{ property.apartment_id }}</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .header { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+        .debt-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; }
+        .total { font-size: 20px; font-weight: bold; color: #d32f2f; margin-top: 15px; }
+        .btn-pay { display: block; text-align: center; background: #f5a623; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .docs { margin-top: 20px; font-size: 14px; }
+        .logout { display: block; text-align: center; margin-top: 20px; color: #666; text-decoration: none; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <h2>Пәтер №{{ property.apartment_id }}</h2>
+        <p>Дербес шот: <strong>{{ property.account_number|default:"Көрсетілмеген" }}</strong></p>
+    </div>
+
+    <h3>Ағымдағы қарыз (Теңге):</h3>
+    <div class="debt-row"><span>Үй күтімі:</span> <strong>{{ property.debt_maint }}</strong></div>
+    <div class="debt-row"><span>Тазалық:</span> <strong>{{ property.debt_clean }}</strong></div>
+    <div class="debt-row"><span>Бейнебақылау:</span> <strong>{{ property.debt_sec }}</strong></div>
+    <div class="debt-row"><span>Жылу (есепт.):</span> <strong>{{ property.debt_heat }}</strong></div>
+    <div class="debt-row"><span>Күрделі жөндеу:</span> <strong>{{ property.debt_cap }}</strong></div>
+
+    <div class="total">Жалпы: {{ property.total_debt }} ₸</div>
+
+    <a href="https://kaspi.kz/pay/OSIAqsai3" class="btn-pay" target="_blank">💳 Kaspi-мен төлеу</a>
+
+    <div class="docs">
+        <h4>📋 Құжаттар мен хабарламалар:</h4>
+        <p>Жақында бұл жерде сіздің түбіртектеріңіз бен ОСИ есептері пайда болады.</p>
+    </div>
+
+    <a href="{% url 'resident_auth' %}" class="logout">🚪 Шығу</a>
+</div>
+
+</body>
+</html>
