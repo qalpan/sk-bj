@@ -1,0 +1,30 @@
+{
+  "apartments": [
+    {
+      "id": "1",
+      "account": "ACC001",
+      "area": 45.5,
+      "ledger": [
+        {
+          "month": "Желтоқсан 2025",
+          "charges": { "maint": 2000, "clean": 500, "sec": 1000, "heat": 3000, "cap": 500 },
+          "totalMonthlyCharge": 7000,
+          "accumulated": { "overall": 7000 }
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "account": "ACC002",
+      "area": 62.0,
+      "ledger": [
+        {
+          "month": "Желтоқсан 2025",
+          "charges": { "maint": 2500, "clean": 500, "sec": 1000, "heat": 4000, "cap": 500 },
+          "totalMonthlyCharge": 8500,
+          "accumulated": { "overall": 12000 }
+        }
+      ]
+    }
+  ]
+}
