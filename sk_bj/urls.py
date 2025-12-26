@@ -1,8 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-# 'core' сөзін өзіңіздің нақты папкаңыздың атына ауыстырыңыз
-# Мысалы, егер views.py файлыңыз 'sk_bj' ішінде болса:
-from sk_bj import views
+from . import views  # Нүкте (.) "осы папкадан ізде" дегенді білдіреді
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Дұрысталды: admin.site.urls
