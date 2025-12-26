@@ -2,52 +2,68 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
+    <title>Жеке кабинет: {{ property.apartment_id }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Жеке кабинет - Пәтер {{ property.apartment_id }}</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        .header { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
-        .debt-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #eee; }
-        .total { font-size: 20px; font-weight: bold; color: #d32f2f; margin-top: 15px; }
-        .btn-pay { display: block; text-align: center; background: #f5a623; color: white; padding: 15px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 20px; }
-        .docs { margin-top: 20px; font-size: 14px; }
-        .logout { display: block; text-align: center; margin-top: 20px; color: #666; text-decoration: none; font-size: 13px; }
+        body { font-family: Arial, sans-serif; background: #f4f7f6; padding: 10px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Хабарландырулар стилі */
+        .announcement { background: #fff5f5; border: 2px solid #ed1c24; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .private-note { background: #e7f3ff; border-left: 5px solid #007bff; padding: 10px; margin-top: 10px; font-size: 14px; }
+        
+        /* Кесте стилі (9a.html сияқты) */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .total-row { background: #ffe082; font-weight: bold; font-size: 16px; }
+        
+        /* Батырмалар */
+        .pay-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 25px; }
+        .btn { padding: 15px; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; }
+        .kaspi { background: #ed1c24; }
+        .halyk { background: #00a040; }
+        .logout { color: #888; text-align: center; display: block; margin-top: 20px; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="header">
-        <h2>Пәтер №{{ property.apartment_id }}</h2>
-        <p>Дербес шот: <strong>{{ property.account_number|default:"Көрсетілмеген" }}</strong></p>
+<div class="container">
+    <div class="announcement">
+        <h3 style="color: #ed1c24; margin: 0 0 10px 0;">📢 ОСИ Хабарландыруы:</h3>
+        <p style="margin: 0;">{{ property.general_announcement|default:"Құрметті тұрғындар! Төлемді уақытылы өтеуіңізді сұраймыз." }}</p>
+        
+        {% if property.private_note %}
+        <div class="private-note">
+            <strong>🔔 Жеке ескерту:</strong> {{ property.private_note }}
+        </div>
+        {% endif %}
     </div>
 
-    <h3>Ағымдағы қарыз (Теңге):</h3>
-    <div class="debt-row"><span>Үй күтімі:</span> <strong>{{ property.debt_maint }}</strong></div>
-    <div class="debt-row"><span>Тазалық:</span> <strong>{{ property.debt_clean }}</strong></div>
-    <div class="debt-row"><span>Бейнебақылау:</span> <strong>{{ property.debt_sec }}</strong></div>
-    <div class="debt-row"><span>Жылу (есепт.):</span> <strong>{{ property.debt_heat }}</strong></div>
-    <div class="debt-row"><span>Күрделі жөндеу:</span> <strong>{{ property.debt_cap }}</strong></div>
+    <h2>Пәтер №{{ property.apartment_id }}</h2>
+    <p>Дербес шот: <strong>{{ property.account_number }}</strong></p>
 
-    <div class="total">Жалпы: {{ property.total_debt }} ₸</div>
+    <table>
+        <tr><td>Үй күтімі:</td><td style="text-align: right;">{{ property.debt_maint }} ₸</td></tr>
+        <tr><td>Тазалық:</td><td style="text-align: right;">{{ property.debt_clean }} ₸</td></tr>
+        <tr><td>Бейнебақылау:</td><td style="text-align: right;">{{ property.debt_sec }} ₸</td></tr>
+        <tr><td>Жылу (есепт.):</td><td style="text-align: right;">{{ property.debt_heat }} ₸</td></tr>
+        <tr><td>Күрделі жөндеу:</td><td style="text-align: right;">{{ property.debt_cap }} ₸</td></tr>
+        <tr class="total-row">
+            <td>ЖАЛПЫ:</td>
+            <td style="text-align: right;">{{ property.total_debt }} ₸</td>
+        </tr>
+    </table>
 
-    <a href="https://kaspi.kz/pay/OSIAqsai3" class="btn-pay" target="_blank">💳 Kaspi-мен төлеу</a>
-
-    <div class="docs">
-        <h4>📋 Құжаттар мен хабарламалар:</h4>
-        <p>Жақында бұл жерде сіздің түбіртектеріңіз бен ОСИ есептері пайда болады.</p>
+    <div class="pay-buttons">
+        <a href="https://kaspi.kz/pay/OSI_AKSAI_3_10A?service=1&apt={{ property.apartment_id }}" class="btn kaspi" target="_blank">
+            Kaspi-мен төлеу
+        </a>
+        <a href="https://homebank.kz/payments/common/OSI_AKSAI?apt={{ property.apartment_id }}" class="btn halyk" target="_blank">
+            Halyk-пен төлеу
+        </a>
     </div>
-<div style="margin-top: 20px; text-align: center;">
-    <a href="{% url 'generate_receipt' %}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
-        📄 Түбіртекті жүктеу / Көру
-    </a>
-    <br>
-    <a href="https://kaspi.kz/pay/OSI_AKSAI_3_10A?service=1&apt={{ property.apartment_id }}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #ed1c24; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
-        💳 Kaspi-мен төлеу
-    </a>
-</div>
-    <a href="{% url 'resident_auth' %}" class="logout">🚪 Шығу</a>
+
+    <a href="{% url 'logout' %}" class="logout">Шығу</a>
 </div>
 
 </body>
