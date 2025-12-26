@@ -28,20 +28,18 @@ def signup(request):
 def import_json_data(request):
     json_path = os.path.join(settings.BASE_DIR, 'kz_tulem_database_2025-12-26.json')
     
-    if not os.path.exists(json_path):
-        return HttpResponse(f"Қате: {json_path} файлы табылмады.")
-
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
         count = 0
         for apt in data.get('apartments', []):
+            # Тек қана apartment_id бойынша іздейміз
             Property.objects.update_or_create(
-                apartment_id=apt['id'],
+                apartment_id=str(apt['id']), # Мысалы: "9", "9а"
                 defaults={
-                    'account_number': apt['account'],
-                    'area': apt['area'],
+                    'account_number': apt.get('account'), # Қайталанса да қабылдайды
+                    'area': apt.get('area', 0),
                     'debt_maint': apt.get('initialDebt', {}).get('maint', 0),
                     'debt_clean': apt.get('initialDebt', {}).get('clean', 0),
                     'debt_sec': apt.get('initialDebt', {}).get('sec', 0),
@@ -50,9 +48,9 @@ def import_json_data(request):
                 }
             )
             count += 1
-        return HttpResponse(f"Сәтті аяқталды! {count} пәтер базаға жүктелді.")
+        return HttpResponse(f"Сәтті аяқталды! {count} пәтер өңделді.")
     except Exception as e:
-        return HttpResponse(f"JSON қатесі: {str(e)}")
+        return HttpResponse(f"Қате шықты: {str(e)}")
 
 def upload_bank_file(request):
     if request.method == 'POST' and request.FILES.get('bank_file'):
