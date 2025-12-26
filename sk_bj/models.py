@@ -62,3 +62,13 @@ class BankPayment(models.Model):
         return f"{self.amount} тг - {self.payer_name}"
     def __str__(self):
         return f"{self.property.account_number}: {self.amount} тг"
+
+class Property(models.Model):
+    account_number = models.CharField("Дербес шот", max_length=20, unique=True)
+    address = models.CharField("Пәтер нөмірі", max_length=50)
+    area = models.DecimalField("Аудан", max_digits=10, decimal_places=2)
+    
+    # Бастапқы қалдықтар (Жыл басындағы қарыз)
+    initial_maint_debt = models.DecimalField("ПИК қарызы", max_digits=15, decimal_places=2, default=0)
+    initial_cap_debt = models.DecimalField("Күрделі жөндеу қарызы", max_digits=15, decimal_places=2, default=0)
+    # ... басқа да қарыз түрлері
