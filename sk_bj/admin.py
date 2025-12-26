@@ -3,11 +3,9 @@ from .models import Property, BankPayment
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ('address', 'account_number', 'area', 'debt_maint', 'debt_cap')
-    search_fields = ('address', 'account_number')
-    list_filter = ('area',)
+    list_display = ('apartment_id', 'account_number', 'address', 'area') # Мұндағы аттар модельдегімен бірдей болуы тиіс
+    search_fields = ('apartment_id', 'account_number')
 
 @admin.register(BankPayment)
 class BankPaymentAdmin(admin.ModelAdmin):
-    list_display = ('property', 'amount', 'payer_name', 'date')
-    date_hierarchy = 'date'
+    list_display = ('property', 'amount', 'payer_name', 'payment_date')
