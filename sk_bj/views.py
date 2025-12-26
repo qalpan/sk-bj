@@ -220,3 +220,23 @@ def generate_receipt(request, apt_id):
         'current_month': "Желтоқсан / Декабрь 2025"
     }
     return render(request, 'receipt_template.html', context)
+
+def generate_receipt(request):
+    # Пайдаланушы қай пәтермен кірсе, соның дерегін аламыз
+    apt_id = request.session.get('apt_id') 
+    if not apt_id:
+        return redirect('login')
+        
+    prop = Property.objects.get(apartment_id=apt_id)
+    
+    # Kaspi және Halyk сілтемелері (пәтер нөмірімен бірге)
+    kaspi_url = f"https://kaspi.kz/pay/OSI_AKSAI_3_10A?service=1&apt={prop.apartment_id}"
+    halyk_url = f"https://homebank.kz/payments/common/OSI_AKSAI?apt={prop.apartment_id}"
+
+    context = {
+        'prop': prop,
+        'kaspi_url': kaspi_url,
+        'halyk_url': halyk_url,
+        'month': "Желтоқсан / Декабрь 2025"
+    }
+    return render(request, 'receipt.html', context)
