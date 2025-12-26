@@ -4,30 +4,30 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
-# JSON файлының жолы
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Файлдың нақты орнын тексеріңіз: ол 'sk_bj' папкасының ішінде болуы керек
-DATA_FILE = os.path.join(BASE_DIR, 'sk_bj', 'apartments.json')
+# Файл жолын анықтаудың ең сенімді жолы:
+# Бұл views.py файлы тұрған папканы (sk_bj) табады
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(CURRENT_DIR, 'apartments.json')
 
 def load_data():
     if not os.path.exists(DATA_FILE):
-        # Егер файл жоқ болса, бос құрылым қайтару
+        # Егер файл жоқ болса, бос тізім қайтарамыз
         return {"apartments": []}
-    with open(DATA_FILE, 'r', encoding='utf-8') as f:
-        try:
+    try:
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-        except json.JSONDecodeError:
-            return {"apartments": []}
+    except (json.JSONDecodeError, IOError):
+        return {"apartments": []}
 
 @csrf_exempt
 def api_manager(request, apt_id=None):
     try:
         if request.method == 'GET':
-            # Егер URL-де пәтер нөмірі болса (мысалы, /pater/1/), HTML бетті ашу
-            if 'pater' in request.path:
+            # Пәтер бетін ашу
+            if apt_id or 'pater' in request.path:
                 return render(request, 'pater.html', {'apt_id': apt_id})
             
-            # Әйтпесе JSON деректерін қайтару
+            # API деректерін қайтару
             data = load_data()
             return JsonResponse(data, safe=False)
 
@@ -38,7 +38,6 @@ def api_manager(request, apt_id=None):
             return JsonResponse({"status": "ok"})
             
     except Exception as e:
-        # Қате болса, оны JSON түрінде қайтару (дизайн бұзылмауы үшін)
         return JsonResponse({"error": str(e)}, status=500)
 
 def admin_panel(request):
