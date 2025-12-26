@@ -85,47 +85,51 @@ function renderTable() {
         const L = apt.ledger[mIdx];
         const ch = L.charges || {};
         
-        // 1. Төлемдерді басынан жинақтап есептейміз
-        let fact = { maint: 0, clean: 0, sec: 0, heat: 0, cap: 0 };
-        
-        // Егер осы айда төлемдер болса, оларды қосамыз
-        if (L.paymentTransactions && L.paymentTransactions.length > 0) {
-            L.paymentTransactions.forEach(t => {
-                if (t.amounts) {
-                    fact.maint += (t.amounts.maint || 0);
-                    fact.clean += (t.amounts.clean || 0);
-                    fact.sec += (t.amounts.sec || 0);
-                    fact.heat += (t.amounts.heat || 0);
-                    fact.cap += (t.amounts.cap || 0);
-                }
-            });
-        }
+        // Әр қызмет бойынша төлемдерді жеке-жеке жинау (Транзакциялар тізімі)
+        // Бұл функция берілген қызмет түрі (key) бойынша барлық төлемдерді форматтап қайтарады
+        const getFactDetails = (key) => {
+            if (!L.paymentTransactions || L.paymentTransactions.length === 0) return '<span class="no-pay">Төлем жоқ</span>';
+            
+            return L.paymentTransactions
+                .filter(t => t.amounts && t.amounts[key] > 0) // Тек осы қызметке төленгендерін аламыз
+                .map(t => `
+                    <div class="trans-item">
+                        <b>${t.amounts[key]} ₸</b> 
+                        <br><small>${t.paymentSource || 'Банк'} | ${t.date || ''}</small>
+                    </div>
+                `).join('') || '<span class="no-pay">0</span>';
+        };
 
-        // 2. Кестеге шығару (Жоспар / Факт форматында)
         tbody.innerHTML += `
             <tr>
-                <td>${apt.id}</td>
-                <td>
-                    <div class="plan">${ch.maint}</div>
-                    <div class="fact" style="color:green">${fact.maint}</div>
+                <td><b>${apt.id}</b></td>
+                <td>${apt.area}</td>
+                <td class="service-cell">
+                    <div class="plan-val">Жоспар: ${ch.maint}</div>
+                    <div class="fact-list">${getFactDetails('maint')}</div>
                 </td>
-                <td>
-                    <div class="plan">${ch.clean}</div>
-                    <div class="fact" style="color:green">${fact.clean}</div>
+                <td class="service-cell">
+                    <div class="plan-val">Жоспар: ${ch.clean}</div>
+                    <div class="fact-list">${getFactDetails('clean')}</div>
                 </td>
-                <td>
-                    <div class="plan">${ch.sec}</div>
-                    <div class="fact" style="color:green">${fact.sec}</div>
+                <td class="service-cell">
+                    <div class="plan-val">Жоспар: ${ch.sec}</div>
+                    <div class="fact-list">${getFactDetails('sec')}</div>
                 </td>
-                <td>
-                    <div class="plan">${ch.heat}</div>
-                    <div class="fact" style="color:green">${fact.heat}</div>
+                <td class="service-cell">
+                    <div class="plan-val">Жоспар: ${ch.heat}</div>
+                    <div class="fact-list">${getFactDetails('heat')}</div>
                 </td>
-                <td>
-                    <div class="plan">${ch.cap}</div>
-                    <div class="fact" style="color:green">${fact.cap}</div>
+                <td class="service-cell">
+                    <div class="plan-val">Жоспар: ${ch.cap}</div>
+                    <div class="fact-list">${getFactDetails('cap')}</div>
                 </td>
-                <td style="font-weight:bold">${L.accumulated.overall.toLocaleString()}</td>
+                <td style="background: #f1f8e9;">
+                    <b>${L.totalMonthlyCharge} ₸</b>
+                </td>
+                <td style="color: ${L.accumulated.overall > 0 ? 'red' : 'green'}; font-weight: bold;">
+                    ${L.accumulated.overall.toLocaleString()} ₸
+                </td>
             </tr>
         `;
     });
