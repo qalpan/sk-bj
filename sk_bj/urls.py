@@ -8,4 +8,5 @@ urlpatterns = [
     path('signup-special-access/', views.signup, name='signup'),
     path('import-data/', views.import_data, name='import_data'),
     path('upload-bank/', views.upload_bank, name='upload_bank'),
+    path('import-json/', views.import_from_json, name='import_json'),
 ]
