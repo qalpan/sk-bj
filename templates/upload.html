@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Төлемдерді жүктеу</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h2>Kaspi CSV файлын таңдаңыз</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="bank_file" accept=".csv" required>
+        <button type="submit">Жүктеу</button>
+    </form>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: green;">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+</body>
+</html>
