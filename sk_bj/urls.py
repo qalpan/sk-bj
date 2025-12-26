@@ -9,3 +9,10 @@ urlpatterns = [
     path('signup-special-access/', views.signup, name='signup'),
     path('upload-bank/', views.upload_bank_file, name='upload_bank'), # Функция атын views-қа сәйкестендірдік
 ]
+   from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ... басқа жолдар ...
+    path('receipt/', views.generate_receipt, name='generate_receipt'),
+] 
