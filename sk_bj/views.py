@@ -128,29 +128,32 @@ from .models import Property
 
 def resident_auth(request):
     if request.method == 'POST':
-        apt_id = request.POST.get('apt_id').strip()
+        # strip() — бос орындарды алып тастайды, lower() — кіші әріпке айналдырады
+        apt_id = request.POST.get('apt_id', '').strip().lower()
         pwd = request.POST.get('password')
         action = request.POST.get('action')
 
         try:
-            # Пәтерді базадан іздеу
-            prop = Property.objects.get(apartment_id=apt_id)
+            # Базадан іздегенде де кіші әріппен және дәл сәйкестікпен іздейміз
+            # Ескерту: Базадағы apartment_id-лерді де кіші әріпке келтіру керек болуы мүмкін
+            prop = Property.objects.filter(apartment_id__iexact=apt_id).first()
             
+            if not prop:
+                return render(request, 'login.html', {'error': f'"{apt_id}" пәтері базада табылмады!'})
+
             if action == 'signup':
-                # Тіркелу: егер пароль әлі өзгертілмеген болса (немесе жаңадан тіркелсе)
                 prop.password = pwd
                 prop.save()
                 return render(request, 'cabinet.html', {'property': prop})
             
             elif action == 'login':
-                # Кіру: парольді тексеру
                 if prop.password == pwd:
                     return render(request, 'cabinet.html', {'property': prop})
                 else:
                     return render(request, 'login.html', {'error': 'Құпия сөз қате!'})
         
-        except Property.DoesNotExist:
-            return render(request, 'login.html', {'error': 'Мұндай пәтер тіркелмеген!'})
+        except Exception as e:
+            return render(request, 'login.html', {'error': f'Жүйелік қате: {str(e)}'})
 
     return render(request, 'login.html')
 
