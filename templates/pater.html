@@ -2,40 +2,46 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>Түбіртек: {{ apt.id }}</title>
+    <title>Түбіртек: Пәтер {{ apt_id }}</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 11px; padding: 20px; color: #333; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #999; padding: 6px; text-align: right; }
-        .header { background: #eee; text-align: center; font-weight: bold; }
-        .total { background: #ffe082; font-weight: bold; }
-        .btn { display: inline-block; padding: 8px 12px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; margin-top: 10px; }
+        body { font-family: sans-serif; padding: 30px; background: #eee; }
+        .receipt { background: white; max-width: 600px; margin: auto; padding: 20px; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .total { font-size: 20px; font-weight: bold; color: #2c3e50; background: #fff3cd; }
+        .btn-pay { display: block; text-align: center; background: #27ae60; color: white; padding: 15px; text-decoration: none; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>Желтоқсан 2025 — Төлем түбіртегі</h2>
-    <p>Пәтер: <strong>{{ apt.id }}</strong> | Аудан: {{ apt.area }} м²</p>
-    <p>Дербес шот: {{ apt.account|default:"Дербес шот анықталуда" }}</p>
+    <div class="receipt" id="app">
+        <h2>Желтоқсан 2025 — Төлем түбіртегі</h2>
+        <div id="content">Жүктелуде...</div>
+    </div>
 
-    <table>
-        <tr class="header">
-            <td>Қызмет түрі</td>
-            <td>Тариф</td>
-            <td>Сомасы</td>
-        </tr>
-        <tr>
-            <td style="text-align: left;">Үй күтімі (Smart Тариф)</td>
-            <td>{{ apt.auto_rate }} тңг</td>
-            <td>{% widthratio apt.area 1 apt.auto_rate %} тңг</td>
-        </tr>
-        <tr class="total">
-            <td colspan="2">Төлемге (Қарызды қосқанда):</td>
-            <td>{{ apt.balance }} тңг</td>
-        </tr>
-    </table>
+<script>
+    async function loadPater() {
+        const aptId = window.location.pathname.split('/')[2];
+        const res = await fetch('/api/data/');
+        const data = await res.json();
+        const apt = data.apartments.find(a => a.id == aptId);
+        const lastMonth = apt.ledger[apt.ledger.length - 1];
 
-    {% if apt.account %}
-    <a href="https://halykbank.kz/pay/{{ apt.account }}" class="btn">Halyk-пен төлеу</a>
-    {% endif %}
+        document.getElementById('content').innerHTML = `
+            <p>Пәтер: <b>${apt.id}</b> | Аудан: ${apt.area} м²</p>
+            <p>Дербес шот: <b>${apt.account}</b></p>
+            <table>
+                <tr><th>Қызмет</th><th>Сомасы</th></tr>
+                <tr><td>Үй күтімі</td><td>${lastMonth.charges.maint} ₸</td></tr>
+                <tr><td>Тазалық</td><td>${lastMonth.charges.clean} ₸</td></tr>
+                <tr><td>Күзет</td><td>${lastMonth.charges.sec} ₸</td></tr>
+                <tr><td>Жылу</td><td>${lastMonth.charges.heat} ₸</td></tr>
+                <tr><td>Күрделі жөндеу</td><td>${lastMonth.charges.cap} ₸</td></tr>
+                <tr class="total"><td>Төлемге (Қарызбен):</td><td>${lastMonth.accumulated.overall} ₸</td></tr>
+            </table>
+            <a href="https://kaspi.kz/pay/${apt.account}" class="btn-pay">Kaspi-мен төлеу</a>
+        `;
+    }
+    loadPater();
+</script>
 </body>
 </html>
