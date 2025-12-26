@@ -240,3 +240,24 @@ def generate_receipt(request):
         'month': "Желтоқсан / Декабрь 2025"
     }
     return render(request, 'receipt.html', context)
+
+# sk_bj/views.py
+import json
+from django.http import JsonResponse
+from django.shortcuts import render
+
+def save_data_api(request):
+    if request.method == 'POST':
+        new_data = json.loads(request.body)
+        with open('kz_tulem_database_2025-12-26.json', 'w', encoding='utf-8') as f:
+            json.dump(new_data, f, ensure_ascii=False, indent=4)
+        return JsonResponse({'status': 'ok'})
+
+def get_pater_detail(request, apt_id):
+    with open('kz_tulem_database_2025-12-26.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    # Пәтерді ID бойынша іздеу
+    apt = next((item for item in data if str(item['id']) == apt_id), None)
+    if apt:
+        return render(request, 'pater.html', {'apt': apt})
+    return JsonResponse({'error': 'Not found'}, status=404)
