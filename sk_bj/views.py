@@ -111,3 +111,14 @@ def upload_bank_file(request):
         return redirect('/admin/sk_bj/bankpayment/')
     
     return render(request, 'upload.html')
+
+def resident_cabinet(request):
+    if request.method == 'POST':
+        apt_id = request.POST.get('apt_id')
+        pwd = request.POST.get('password')
+        try:
+            property_obj = Property.objects.get(apartment_id=apt_id, password=pwd)
+            return render(request, 'cabinet.html', {'property': property_obj})
+        except Property.DoesNotExist:
+            return render(request, 'login.html', {'error': 'Пәтер нөмірі немесе құпия сөз қате!'})
+    return render(request, 'login.html')
