@@ -35,3 +35,6 @@ def api_manager(request, apt_id=None):
 
     # АДМИН ПАНЕЛЬ: Деректерді алу (GET)
     return JsonResponse(data, safe=False)
+
+def resident_auth(request):
+    return HttpResponse("Логин беті әлі дайын емес")
