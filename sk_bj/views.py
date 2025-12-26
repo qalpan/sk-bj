@@ -57,24 +57,40 @@ def upload_bank_file(request):
         file = request.FILES['bank_file']
         decoded_file = file.read().decode('utf-8')
         io_string = io.StringIO(decoded_file)
-        reader = csv.DictReader(io_string)
         
+        # Бірінші жол баған атаулары емес болса, оны өткізіп жіберу үшін:
+        lines = io_string.readlines()
+        if len(lines) > 0 and 'РЕЕСТР' in lines[0]:
+            io_string = io.StringIO("".join(lines[1:]))
+        else:
+            io_string = io.StringIO("".join(lines))
+
+        reader = csv.DictReader(io_string)
         count = 0
+        
         for row in reader:
             try:
-                account = row.get('Лицевой счет')
-                amount = float(row.get('Сумма', 0))
-                payer = row.get('ФИО плательщика', '')
+                # Баған аттарын бірнеше нұсқада іздейміз (Kaspi және Halyk үшін)
+                account = row.get('Лицевой номер') or row.get('Лицевой счет')
+                amount = row.get('Сумма')
+                payer = row.get('ФИО') or row.get('ФИО плательщика')
                 
-                prop = Property.objects.get(account_number=account)
-                BankPayment.objects.create(
+                if not account or not amount:
+                    continue
+
+                # Пәтерді базадан іздеу
+                prop = Property.objects.get(account_number=account.strip())
+                
+                # Төлемді жазу
+                BankPayment.objects.get_or_create(
                     property=prop,
-                    amount=amount,
-                    payer_name=payer,
+                    amount=float(amount),
+                    payer_name=payer or "Белгісіз",
                     external_id=f"{account}_{amount}_{payer}"
                 )
                 count += 1
-            except:
+            except Exception as e:
+                print(f"Қате: {e}")
                 continue
         
         messages.success(request, f"{count} төлем сәтті жүктелді!")
