@@ -82,3 +82,43 @@ def import_json_data(request):
         count += 1
     
     return HttpResponse(f"Сәтті аяқталды! {count} пәтер базаға жүктелді.")
+
+import json
+import os
+from django.shortcuts import render, redirect
+from django.conf import settings
+from django.http import HttpResponse
+from .models import Property
+
+# JSON-ды базаға құю функциясы
+def import_json_data(request):
+    json_path = os.path.join(settings.BASE_DIR, 'kz_tulem_database_2025-12-26.json')
+    
+    if not os.path.exists(json_path):
+        return HttpResponse("Қате: JSON файл табылмады!")
+
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    count = 0
+    for apt in data['apartments']:
+        Property.objects.update_or_create(
+            apartment_id=apt['id'],
+            defaults={
+                'account_number': apt['account'],
+                'area': apt['area'],
+                'debt_maint': apt['initialDebt']['maint'],
+                'debt_clean': apt['initialDebt']['clean'],
+                'debt_sec': apt['initialDebt']['sec'],
+                'debt_heat': apt['initialDebt']['heat'],
+                'debt_cap': apt['initialDebt']['cap'],
+            }
+        )
+        count += 1
+    
+    return HttpResponse(f"Сәтті аяқталды! {count} пәтер базаға жүктелді.")
+
+# Тіркелу функциясы (сізде бар болса, қалдырыңыз)
+def signup(request):
+    # ... бұрынғы код ...
+    return render(request, 'signup.html')
