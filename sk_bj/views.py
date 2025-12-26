@@ -153,3 +153,33 @@ def resident_auth(request):
             return render(request, 'login.html', {'error': 'Мұндай пәтер тіркелмеген!'})
 
     return render(request, 'login.html')
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def import_from_json(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            # Егер мәліметтер 'apartments' кілтінің ішінде болса
+            apartments_list = data.get('apartments', data) 
+            
+            for item in apartments_list:
+                Property.objects.update_or_create(
+                    apartment_id=str(item.get('id')),
+                    defaults={
+                        'account_number': item.get('account'),
+                        'area': item.get('area', 0.0),
+                        'debt_maint': item.get('debtMaint', 0.0),
+                        'debt_clean': item.get('debtClean', 0.0),
+                        'debt_sec': item.get('debtSec', 0.0),
+                        'debt_heat': item.get('debtHeat', 0.0),
+                        'debt_cap': item.get('debtCap', 0.0),
+                    }
+                )
+            return JsonResponse({'status': 'success', 'message': f'{len(apartments_list)} пәтер жаңартылды'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return render(request, 'import_page.html')
