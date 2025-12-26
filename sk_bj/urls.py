@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path
-from core import views  # 'core' папкасының аты дұрыс екеніне көз жеткізіңіз
+# 'core' сөзін өзіңіздің нақты папкаңыздың атына ауыстырыңыз
+# Мысалы, егер views.py файлыңыз 'sk_bj' ішінде болса:
+from sk_bj import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Дұрысталды: admin.site.urls
