@@ -166,27 +166,42 @@ def import_from_json(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # Егер мәліметтер тікелей тізім болса немесе 'apartments' ішінде болса
-            apartments_list = data.get('apartments', data) 
+            apartments_list = data.get('apartments', data)
             
             for item in apartments_list:
-                # Сіздің JSON-да қарыздар 'debt' кілтінің ішінде тұр
-                debt_data = item.get('debt', {})
-                
+                # 1. Ең соңғы айдағы қарызды (ledger) алуға тырысамыз
+                ledger = item.get('ledger', [])
+                if ledger and len(ledger) > 0:
+                    # Ең соңғы айды аламыз (мысалы, Желтоқсан)
+                    last_month_data = ledger[-1].get('accumulated', {})
+                    maint = last_month_data.get('maint', 0)
+                    clean = last_month_data.get('clean', 0)
+                    sec = last_month_data.get('sec', 0)
+                    heat = last_month_data.get('heat', 0)
+                    cap = last_month_data.get('cap', 0)
+                else:
+                    # Егер ledger бос болса, initialDebt-ті аламыз
+                    debts = item.get('initialDebt', item.get('debt', {}))
+                    maint = debts.get('maint', 0)
+                    clean = debts.get('clean', 0)
+                    sec = debts.get('sec', 0)
+                    heat = debts.get('heat', 0)
+                    cap = debts.get('cap', 0)
+
+                # 2. Базаны жаңарту
                 Property.objects.update_or_create(
                     apartment_id=str(item.get('id')),
                     defaults={
                         'account_number': item.get('account'),
                         'area': item.get('area', 0.0),
-                        # Мәліметтерді 'debt_data' ішінен нақты кілттермен аламыз
-                        'debt_maint': debt_data.get('maint', 0.0),
-                        'debt_clean': debt_data.get('clean', 0.0),
-                        'debt_sec': debt_data.get('sec', 0.0),
-                        'debt_heat': debt_data.get('heat', 0.0),
-                        'debt_cap': debt_data.get('cap', 0.0),
+                        'debt_maint': maint,
+                        'debt_clean': clean,
+                        'debt_sec': sec,
+                        'debt_heat': heat,
+                        'debt_cap': cap,
                     }
                 )
-            return JsonResponse({'status': 'success', 'message': f'{len(apartments_list)} пәтер деректері сәтті жаңартылды'})
+            return JsonResponse({'status': 'success', 'message': f'{len(apartments_list)} пәтердің соңғы есептері жүктелді'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return render(request, 'import_page.html')
