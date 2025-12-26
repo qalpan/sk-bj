@@ -123,28 +123,33 @@ def resident_cabinet(request):
             return render(request, 'login.html', {'error': 'Пәтер нөмірі немесе құпия сөз қате!'})
     return render(request, 'login.html')
 
+from django.shortcuts import render, redirect
+from .models import Property
+
 def resident_auth(request):
     if request.method == 'POST':
-        apt_id = request.POST.get('apt_id')
+        apt_id = request.POST.get('apt_id').strip()
         pwd = request.POST.get('password')
-        action = request.POST.get('action') # 'login' немесе 'signup'
+        action = request.POST.get('action')
 
         try:
+            # Пәтерді базадан іздеу
             prop = Property.objects.get(apartment_id=apt_id)
             
             if action == 'signup':
-                # Егер пароль әлі "12345" (бастапқы) болса, жаңасын орнатады
+                # Тіркелу: егер пароль әлі өзгертілмеген болса (немесе жаңадан тіркелсе)
                 prop.password = pwd
                 prop.save()
                 return render(request, 'cabinet.html', {'property': prop})
             
             elif action == 'login':
+                # Кіру: парольді тексеру
                 if prop.password == pwd:
                     return render(request, 'cabinet.html', {'property': prop})
                 else:
                     return render(request, 'login.html', {'error': 'Құпия сөз қате!'})
-                    
+        
         except Property.DoesNotExist:
-            return render(request, 'login.html', {'error': 'Мұндай пәтер базада жоқ!'})
-    
+            return render(request, 'login.html', {'error': 'Мұндай пәтер тіркелмеген!'})
+
     return render(request, 'login.html')
