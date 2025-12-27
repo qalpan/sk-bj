@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Aqsai3-10a Қаржы Басқару Панелі</title>
     <style>
+        /* БАСҚАРУ ПАНЕЛІНІҢ СТИЛІ */
         body { font-family: Arial, sans-serif; background: #f0f2f5; color: #424242; font-size: 11px; padding: 10px; }
         .admin-panel { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 1250px; margin: auto; }
         .section { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 20px; background: white; }
@@ -12,26 +13,34 @@
         .btn-green { background: #28a745; }
         .btn-blue { background: #007bff; }
         .btn-orange { background: #fd7e14; }
+        .btn-red { background: #dc3545; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
         th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
         th { background: #f8f9fa; }
-        .stats-header { background: #e3f2fd; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px; border: 1px solid #b3d7ff; }
-        .footer-total { background: #f1f3f5; font-weight: bold; }
+        .stats-header { background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; border: 1px solid #b3d7ff; font-weight: bold; }
+        .footer-total { background: #eee; font-weight: bold; }
     </style>
 </head>
-<body>
+<body onload="init()">
 
 <div class="admin-panel">
-    <h2>🏠 Төлем және Қаржы Басқару Панелі</h2>
+    <h2>🏠 Қаржы Басқару Панелі</h2>
 
     <div id="statsHeader" class="stats-header">
-        <b>Жалпы мәліметтер:</b> 
-        <span style="margin-left: 20px;">Пәтерлер саны: <span id="totalAptsCount">0</span></span>
+        📊 Жалпы мәліметтер: 
+        <span style="margin-left: 20px;">Пәтер саны: <span id="totalAptsCount">0</span></span>
         <span style="margin-left: 20px;">Жалпы ауданы: <span id="totalAreaSum">0</span> м²</span>
     </div>
 
+    <div class="controls">
+        <label>Пәтер №:</label>
+        <input type="text" id="aptInput" value="1" style="width: 60px;">
+        <button class="btn btn-blue" onclick="loadApartment()">🔍 Көрсету</button>
+        <button class="btn btn-green" onclick="saveData()">💾 Сақтау</button>
+    </div>
+
     <div class="section">
-        <h3>📅 Ай сайынғы төлемдер тізімі</h3>
+        <h3>📅 Ай сайынғы төлемдер тізімі (Есеп)</h3>
         <div class="controls">
             <label>Айды таңдаңыз:</label>
             <select id="listMonthSelect">
@@ -44,14 +53,14 @@
             </select>
             <button onclick="generatePaymentList()" class="btn btn-blue">🔍 Тізімді құру</button>
         </div>
-
+        
         <div id="paymentListContainer">
             <table id="mainPaymentTable">
                 <thead>
                     <tr>
                         <th>Пәтер №</th>
                         <th>Ауданы (м²)</th>
-                        <th>Төлем сомасы</th>
+                        <th>Төлем сомасы (тг)</th>
                         <th>БАРЛЫҒЫ (Ж/Т) <br><small>(Банк пен Күні)</small></th>
                     </tr>
                 </thead>
@@ -65,17 +74,14 @@
 </div>
 
 <script>
-    // Пәтерлер базасы (Мысал ретінде бірнешеуі)
-    let apartments = [
-        { id: '1', area: 49.9 }, { id: '2', area: 44.6 }, { id: '3', area: 45.4 }
-        // Басқа пәтерлерді .json арқылы жүктеуге болады
-    ];
+    // Түпнұсқа файлдағы деректер мен функциялар
+    let apartments = []; // Бұл жерге сіздің APARTMENT_DATA тізіміңіз келеді
+    let financeAccounts = {}; 
 
-    // Төлемдер базасы (Банк пен күн осында сақталады)
-    let financeAccounts = {
-        '1': { paidAmount: 5000, bank: 'Kaspi Bank', payDate: '2025-12-25' },
-        '2': { paidAmount: 3500, bank: 'Halyk Bank', payDate: '2025-12-26' }
-    };
+    function init() {
+        // Бастапқы деректерді жүктеу логикасы
+        generatePaymentList();
+    }
 
     function generatePaymentList() {
         const tbody = document.getElementById('paymentListBody');
@@ -86,6 +92,7 @@
         let totalSum = 0;
         let totalArea = 0;
 
+        // Пәтерлерді айналып шығу
         apartments.forEach(apt => {
             const acc = financeAccounts[apt.id] || {};
             const sum = parseFloat(acc.paidAmount) || 0;
@@ -95,40 +102,36 @@
             totalArea += area;
 
             const tr = document.createElement('tr');
-            // Банк пен күнді біріктіріп көрсету
-            const bankInfo = acc.bank ? `${acc.bank} (${acc.payDate || ''})` : '—';
+            // Банк пен төлем күнін біріктіру (сіз сұраған баған)
+            const bankAndDate = acc.bank ? `${acc.bank} | ${acc.payDate || ''}` : '—';
 
             tr.innerHTML = `
                 <td>${apt.id}</td>
                 <td>${area}</td>
-                <td>${sum.toLocaleString()} тг</td>
+                <td>${sum.toLocaleString()}</td>
                 <td style="background: #f9f9f9; font-weight: bold;">
                     ${sum.toLocaleString()} тг <br>
-                    <small style="color: #666; font-weight: normal;">${bankInfo}</small>
+                    <small style="color: #555; font-weight: normal;">${bankAndDate}</small>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
-        // Жоғарғы статистиканы жаңарту
+        // БАС ЖАҒЫНДАҒЫ көрсеткіштерді жаңарту
         document.getElementById('totalAptsCount').innerText = apartments.length;
         document.getElementById('totalAreaSum').innerText = totalArea.toFixed(2);
 
-        // Төменгі ҚОРЫТЫНДЫ жолын жасау
+        // АЯҒЫНДАҒЫ ЖАЛПЫ ЕСЕПТЕУ (FOOTER)
         const footerRow = document.createElement('tr');
         footerRow.className = 'footer-total';
         footerRow.innerHTML = `
-            <td>БАРЛЫҒЫ:</td>
+            <td>БАРЛЫҒЫ (ИТОГО):</td>
             <td>${totalArea.toFixed(2)} м²</td>
             <td>-</td>
-            <td style="color: blue;">${totalSum.toLocaleString()} тг</td>
+            <td style="color: #007bff; font-size: 14px;">${totalSum.toLocaleString()} тг</td>
         `;
         tfoot.appendChild(footerRow);
     }
-
-    // Алғашқы іске қосу
-    window.onload = generatePaymentList;
 </script>
-
 </body>
 </html>
