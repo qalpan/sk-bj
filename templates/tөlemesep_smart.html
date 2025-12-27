@@ -2,33 +2,41 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>SK-BJ — Толық Қаржылық Есеп</title>
+    <title>SK-BJ — Толық Автоматты Панель</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 15px; font-size: 12px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .admin-section { background: #eef2f3; padding: 15px; border-radius: 8px; border: 1px solid #3498db; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-        .btn-upload { background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 15px; font-size: 12px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 100%; margin: auto; }
+        .admin-section { background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px solid #2196f3; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .btn-upload { border: 2px solid #2196f3; color: #2196f3; background-color: white; padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-block; }
+        .btn-upload:hover { background: #2196f3; color: white; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
         .btn-save { background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
-        th { background: #34495e; color: white; padding: 10px; border: 1px solid #455a64; font-size: 11px; }
-        td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
-        .auto-tag { color: #e67e22; font-size: 10px; font-weight: bold; display: block; }
-        .debt-red { color: #e74c3c; font-weight: bold; }
-        .debt-green { color: #27ae60; font-weight: bold; }
-        .trans-info { display: block; font-size: 10px; color: #555; font-style: italic; }
+        th { background: #34495e; color: white; padding: 10px; border: 1px solid #bdc3c7; }
+        td { border: 1px solid #dee2e6; padding: 8px; text-align: center; white-space: nowrap; }
+        .plan-val { color: #7f8c8d; font-size: 11px; }
+        .fact-val { font-weight: bold; color: #27ae60; }
+        .trans-info { font-size: 11px; color: #555; margin-left: 8px; font-style: italic; display: block; }
+        .auto-badge { color: #e67e22; font-size: 10px; font-weight: bold; }
+        .debt-red { color: #c0392b; background: #fce4ec; font-weight: bold; }
+        .debt-green { color: #27ae60; background: #e8f5e9; font-weight: bold; }
         tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
+        .stats-box { margin-left: auto; display: flex; gap: 15px; background: #fff; padding: 5px 15px; border-radius: 5px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color:#2c3e50; margin:0 0 20px 0;">📊 SK-BJ: Барлық есептеулер мен Төлемдер</h2>
+    <h2 style="color:#2c3e50; margin-top:0;">📊 SK-BJ: Қаржылық есеп беру (Автоматты)</h2>
 
     <div class="admin-section">
-        <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="loadFullBase(this)">
-        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">📁 Базаны жүктеу (Авто-есептеу)</button>
+        <div class="file-upload-wrapper">
+            <button class="btn-upload">📁 Базаны таңдау</button>
+            <input type="file" id="fileInput" accept=".json" onchange="loadJSONFile(this)">
+        </div>
         
-        <select id="monthSelector" onchange="renderTable()" style="padding: 8px; font-weight: bold;">
+        <select id="monthSelector" onchange="renderTable()" style="padding: 9px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
             <option value="0">Қаңтар / Январь</option>
             <option value="1">Ақпан / Февраль</option>
             <option value="2">Наурыз / Март</option>
@@ -43,40 +51,52 @@
             <option value="11">Желтоқсан / Декабрь</option>
         </select>
 
-        <button class="btn-save" onclick="exportData()">💾 Сақтау</button>
-        <div id="statusBadge" style="margin-left: auto; font-weight: bold; color: #2980b9;"></div>
+        <button class="btn-save" onclick="downloadJSON()">💾 Сақтау</button>
+
+        <div class="stats-box">
+            <div>🏠 Пәтер: <span id="statCount">0</span></div>
+            <div>📏 Аудан: <span id="statArea">0</span></div>
+            <div style="color: #27ae60;">💳 Төлем жасағандар: <span id="statPayers">0 пәтер (0 төлем)</span></div>
+        </div>
     </div>
+
+    <div id="statusMsg" style="margin-bottom:10px; font-weight:bold; color: #27ae60;"></div>
 
     <table>
         <thead>
             <tr>
-                <th>№ Пәтер</th>
+                <th>№</th>
                 <th>Аудан (м²)</th>
-                <th>Үй күтімі<br>(Жос/Төл)</th>
-                <th>Тазалық<br>(Жос/Төл)</th>
-                <th>Күзет<br>(Жос/Төл)</th>
-                <th>Жылу<br>(Жос/Төл)</th>
-                <th>Кап.жөндеу<br>(Жос/Төл)</th>
-                <th>Жалпы Төлем</th>
-                <th>Қарыз / Артық</th>
+                <th>Үй күтімі<br>(Жос/Фак)</th>
+                <th>Тазалық<br>(Жос/Фак)</th>
+                <th>Күзет<br>(Жос/Фак)</th>
+                <th>Жылу<br>(Жос/Фак)</th>
+                <th>Кап.жөндеу<br>(Жос/Фак)</th>
+                <th>Айлық Жалпы</th>
+                <th>Қарыз</th>
             </tr>
         </thead>
-        <tbody id="tableBody"></tbody>
+        <tbody id="tableBody">
+            <tr><td colspan="9" style="padding: 40px; color: #999;">Файлды жүктеңіз...</td></tr>
+        </tbody>
         <tfoot id="tableFooter"></tfoot>
     </table>
 </div>
 
 <script>
-    let db = null;
+    let db = { apartments: [] };
     const kzMonths = ["Қаңтар", "Ақпан", "Наурыз", "Сәуір", "Мамыр", "Маусым", "Шілде", "Тамыз", "Қыркүйек", "Қазан", "Қараша", "Желтоқсан"];
 
-    function fNum(n) {
-        if (n === undefined || n === null || isNaN(n)) return "0";
-        return n.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 2 }).replace('.', ',');
+    function fNum(num) {
+        if (num === undefined || num === null || isNaN(num)) return "0";
+        let parts = num.toFixed(2).split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        let fraction = parts[1].replace(/0+$/, "");
+        return fraction === "" ? parts[0] : parts[0] + "," + fraction;
     }
 
-    // ТАРИФ ПЕН АУДАН ТАРИХЫН ТАБУ
-    function getMonthVal(arr, mIdx, key) {
+    // Тарифті немесе ауданды ай тарихына байланысты табу
+    function getHistoricVal(arr, mIdx, key) {
         if (!arr) return 0;
         let val = 0;
         const sorted = [...arr].sort((a, b) => a.startMonth - b.startMonth);
@@ -84,111 +104,122 @@
         return val;
     }
 
-    function loadFullBase(input) {
+    function loadJSONFile(input) {
         const file = input.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            db = JSON.parse(e.target.result);
-            const now = new Date();
-            document.getElementById('monthSelector').value = now.getMonth();
-            document.getElementById('statusBadge').innerText = "База жүктелді: " + file.name;
-            renderTable();
+        reader.onload = function(e) {
+            try {
+                db = JSON.parse(e.target.result);
+                // 1. Ағымдағы айды автоматты таңдау
+                document.getElementById('monthSelector').value = new Date().getMonth();
+                document.getElementById('statusMsg').innerText = "✅ База жүктелді: " + file.name;
+                renderTable();
+            } catch (err) { alert("JSON қате!"); }
         };
         reader.readAsText(file);
     }
 
     function renderTable() {
-        if (!db) return;
         const mIdx = parseInt(document.getElementById('monthSelector').value);
         const mName = kzMonths[mIdx];
         const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
+        if (!db.apartments) return;
 
-        let totals = { area: 0, charge: 0, paid: 0, debt: 0 };
+        tbody.innerHTML = '';
+        let totals = { area: 0, charge: 0, paid: 0, debt: 0, maintP: 0, maintF: 0, cleanP: 0, cleanF: 0, secP: 0, secF: 0, heatP: 0, heatF: 0, capP: 0, capF: 0 };
+        
+        let payerApts = new Set();
+        let totalTransactions = 0;
 
         db.apartments.forEach(apt => {
-            // 1. Ағымдағы айдың параметрлері (Аудан және Тарифтер)
-            const curArea = getMonthVal(apt.customSettings.area, mIdx, 'area');
+            const curArea = getHistoricVal(apt.customSettings.area, mIdx, 'area');
             const tar = apt.customSettings.tariffs;
             const rates = {
-                maint: getMonthVal(tar.maint, mIdx, 'rate'),
-                clean: getMonthVal(tar.clean, mIdx, 'rate'),
-                sec: getMonthVal(tar.sec, mIdx, 'rate'),
-                heat: getMonthVal(tar.heat, mIdx, 'rate'),
-                cap: getMonthVal(tar.cap, mIdx, 'rate')
+                maint: getHistoricVal(tar.maint, mIdx, 'rate'),
+                clean: getHistoricVal(tar.clean, mIdx, 'rate'),
+                sec: getHistoricVal(tar.sec, mIdx, 'rate'),
+                heat: getHistoricVal(tar.heat, mIdx, 'rate'),
+                cap: getHistoricVal(tar.cap, mIdx, 'rate')
             };
 
-            // 2. Ledger-ден сол айдың деректерін алу
-            const L = apt.ledger[mName] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
+            const L = apt.ledger[mName] || apt.ledger[mIdx] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
             
-            // 3. Автоматты есептеу (Егер базада сол айға "charges" болмаса)
-            const isAutoCharge = !L.charges || Object.keys(L.charges).length === 0;
-            const charges = {
+            // 2. Автоматты есептеу (Егер базада жоспар болмаса)
+            const isAuto = !L.charges || Object.keys(L.charges).length === 0;
+            const ch = {
                 maint: L.charges.maint || (curArea * rates.maint),
                 clean: L.charges.clean || rates.clean,
-                sec:   L.charges.sec   || rates.sec,
-                heat:  L.charges.heat  || (curArea * rates.heat),
-                cap:   L.charges.cap   || (curArea * rates.cap)
+                sec: L.charges.sec || rates.sec,
+                heat: L.charges.heat || (curArea * rates.heat),
+                cap: L.charges.cap || (curArea * rates.cap)
             };
 
-            // 4. Төлемдерді есептеу (paymentTransactions ішінен)
             const getPaid = (key) => (L.paymentTransactions || []).reduce((s, t) => s + (t.amounts[key] || 0), 0);
-            const facts = {
-                maint: getPaid('maint'), clean: getPaid('clean'), sec: getPaid('sec'),
-                heat: getPaid('heat'), cap: getPaid('cap')
-            };
+            const fa = { maint: getPaid('maint'), clean: getPaid('clean'), sec: getPaid('sec'), heat: getPaid('heat'), cap: getPaid('cap') };
 
-            const rowChargeTotal = Object.values(charges).reduce((a, b) => a + b, 0);
-            const rowPaidTotal = Object.values(facts).reduce((a, b) => a + b, 0);
+            const rowPaid = Object.values(fa).reduce((a, b) => a + b, 0);
+            const rowCharge = Object.values(ch).reduce((a, b) => a + b, 0);
             const rowDebt = L.accumulated ? L.accumulated.overall : 0;
 
-            // Жиынтықтар
-            totals.area += curArea; totals.charge += rowChargeTotal; 
-            totals.paid += rowPaidTotal; totals.debt += rowDebt;
+            // 3. Пәтерлер мен төлемдер санының статистикасы
+            if (rowPaid > 0) {
+                payerApts.add(apt.id);
+                totalTransactions += (L.paymentTransactions || []).length;
+            }
 
-            // Төлем мәліметтері (Дата мен дереккөз)
-            const payDetails = (L.paymentTransactions || []).map(t => `${t.date || ''} ${t.paymentSource || ''}`).join('<br>');
+            totals.area += curArea; totals.charge += rowCharge; totals.paid += rowPaid; totals.debt += rowDebt;
+            totals.maintP += ch.maint; totals.maintF += fa.maint;
+            totals.cleanP += ch.clean; totals.cleanF += fa.clean;
+            totals.secP += ch.sec; totals.secF += fa.sec;
+            totals.heatP += ch.heat; totals.heatF += fa.heat;
+            totals.capP += ch.cap; totals.capF += fa.cap;
+
+            const transDetails = (L.paymentTransactions || []).map(t => `${t.date || ''} ${t.paymentSource || ''}`).join('; ');
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${apt.id}</b></td>
                     <td>${fNum(curArea)}</td>
-                    <td><small>${fNum(charges.maint)}</small><br><b>${fNum(facts.maint)}</b></td>
-                    <td><small>${fNum(charges.clean)}</small><br><b>${fNum(facts.clean)}</b></td>
-                    <td><small>${fNum(charges.sec)}</small><br><b>${fNum(facts.sec)}</b></td>
-                    <td><small>${fNum(charges.heat)}</small><br><b>${fNum(facts.heat)}</b></td>
-                    <td><small>${fNum(charges.cap)}</small><br><b>${fNum(facts.cap)}</b></td>
-                    <td style="background:#e3f2fd">
-                        <b>${fNum(rowPaidTotal)}</b>
-                        ${isAutoCharge ? '<span class="auto-tag">Авто-жоспар: '+fNum(rowChargeTotal)+'</span>' : '<br><small>Жос: '+fNum(rowChargeTotal)+'</small>'}
-                        <span class="trans-info">${payDetails}</span>
+                    <td><span class="plan-val">${fNum(ch.maint)}</span> / <span class="fact-val">${fNum(fa.maint)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.clean)}</span> / <span class="fact-val">${fNum(fa.clean)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.sec)}</span> / <span class="fact-val">${fNum(fa.sec)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.heat)}</span> / <span class="fact-val">${fNum(fa.heat)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.cap)}</span> / <span class="fact-val">${fNum(fa.cap)}</span></td>
+                    <td style="background:#f0f7ff">
+                        <b>${fNum(rowCharge)} / ${fNum(rowPaid)}</b>
+                        ${isAuto ? '<br><span class="auto-badge">(авто-есеп)</span>' : ''}
+                        <span class="trans-info">${transDetails}</span>
                     </td>
                     <td class="${rowDebt > 0 ? 'debt-red' : 'debt-green'}">${fNum(rowDebt)}</td>
                 </tr>
             `;
         });
 
+        document.getElementById('statCount').innerText = db.apartments.length;
+        document.getElementById('statArea').innerText = fNum(totals.area);
+        document.getElementById('statPayers').innerText = `${payerApts.size} пәтер (${totalTransactions} төлем)`;
+
         document.getElementById('tableFooter').innerHTML = `
             <tr>
-                <td>БАРЛЫҒЫ</td>
+                <td>ЖИЫНТЫҚ</td>
                 <td>${fNum(totals.area)}</td>
-                <td colspan="5" style="text-align:right">Айлық Жалпы (Жоспар / Төлем):</td>
+                <td>${fNum(totals.maintP)} / ${fNum(totals.maintF)}</td>
+                <td>${fNum(totals.cleanP)} / ${fNum(totals.cleanF)}</td>
+                <td>${fNum(totals.secP)} / ${fNum(totals.secF)}</td>
+                <td>${fNum(totals.heatP)} / ${fNum(totals.heatF)}</td>
+                <td>${fNum(totals.capP)} / ${fNum(totals.capF)}</td>
                 <td>${fNum(totals.charge)} / ${fNum(totals.paid)}</td>
                 <td>${fNum(totals.debt)}</td>
             </tr>
         `;
     }
 
-    function exportData() {
-        if (!db) return;
-        const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+    function downloadJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `SK-BJ_Export_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
+        a.href = dataStr; a.download = "kz_tulem_updated.json"; a.click();
     }
 </script>
-
 </body>
 </html>
