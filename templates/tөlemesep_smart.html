@@ -125,42 +125,67 @@ function renderTable() {
     const mIdx = document.getElementById('monthSelector').value;
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
+    
+    // Барлық пәтерлер бойынша жалпы жиынтықтар (Итого)
+    let totalPlan = 0;
+    let totalFact = 0;
 
     db.apartments.forEach(apt => {
         const L = apt.ledger[mIdx];
+        const charges = L.charges || {};
         
-        // Функция: Төлемдерді жеке-жеке тізім қылып шығару
-        const formatTransactions = (serviceKey) => {
-            if (!L.paymentTransactions) return "—";
-            
-            return L.paymentTransactions
-                .filter(t => t.amounts && t.amounts[serviceKey] > 0)
-                .map(t => `
-                    <div class="payment-badge">
-                        <span class="pay-amount">${t.amounts[serviceKey]} ₸</span>
-                        <span class="bank-name">${t.paymentSource || 'банк'}</span> 
-                        <span class="pay-date">${t.date || ''}</span>
-                    </div>
-                `).join('');
+        // --- ТӨЛЕМДЕРДІ БӨЛЕК ШЫҒАРУ ЛОГИКАСЫ ---
+        const getServiceFact = (key) => {
+            if (!L.paymentTransactions || L.paymentTransactions.length === 0) return 0;
+            // Осы қызмет түрі бойынша барлық транзакцияларды қосамыз
+            return L.paymentTransactions.reduce((sum, trans) => {
+                return sum + (trans.amounts && trans.amounts[key] ? trans.amounts[key] : 0);
+            }, 0);
         };
 
+        // Әр қызмет бойынша факт сомаларды есептейміз
+        const fact = {
+            maint: getServiceFact('maint'),
+            clean: getServiceFact('clean'),
+            sec: getServiceFact('sec'),
+            heat: getServiceFact('heat'),
+            cap: getServiceFact('cap')
+        };
+
+        const aptTotalFact = fact.maint + fact.clean + fact.sec + fact.heat + fact.cap;
+        totalPlan += (L.totalMonthlyCharge || 0);
+        totalFact += aptTotalFact;
+
+        // Кесте жолын құрастыру
         tbody.innerHTML += `
             <tr>
                 <td><b>${apt.id}</b></td>
-                <td>${apt.area} м²</td>
+                <td>${apt.area}</td>
                 <td>
-                    <div style="font-size:10px; color:#999;">Жоспар: ${L.charges.maint}</div>
-                    ${formatTransactions('maint')}
+                    <div style="color:#888; font-size:11px;">${charges.maint}</div>
+                    <div style="color:green; font-weight:bold;">${fact.maint > 0 ? fact.maint : '0'}</div>
                 </td>
-                <td>${formatTransactions('clean')}</td>
-                <td>${formatTransactions('sec')}</td>
-                <td>${formatTransactions('heat')}</td>
-                <td>${formatTransactions('cap')}</td>
-                <td style="font-weight:bold; background:#f9f9f9;">
-                    ${L.totalMonthlyCharge} / <span style="color:green">${L.totalPaid || 0}</span>
+                <td>
+                    <div style="color:#888; font-size:11px;">${charges.clean}</div>
+                    <div style="color:green; font-weight:bold;">${fact.clean > 0 ? fact.clean : '0'}</div>
                 </td>
-                <td style="color:${L.accumulated.overall > 0 ? 'red' : 'green'}">
-                    ${L.accumulated.overall} ₸
+                <td>
+                    <div style="color:#888; font-size:11px;">${charges.sec}</div>
+                    <div style="color:green; font-weight:bold;">${fact.sec > 0 ? fact.sec : '0'}</div>
+                </td>
+                <td>
+                    <div style="color:#888; font-size:11px;">${charges.heat}</div>
+                    <div style="color:green; font-weight:bold;">${fact.heat > 0 ? fact.heat : '0'}</div>
+                </td>
+                <td>
+                    <div style="color:#888; font-size:11px;">${charges.cap}</div>
+                    <div style="color:green; font-weight:bold;">${fact.cap > 0 ? fact.cap : '0'}</div>
+                </td>
+                <td style="background:#f0f9f0;">
+                    ${L.totalMonthlyCharge} / <span style="color:green; font-weight:bold;">${aptTotalFact}</span>
+                </td>
+                <td style="color:${L.accumulated.overall > 0 ? 'red' : 'green'}; font-weight:bold;">
+                    ${L.accumulated.overall.toLocaleString()}
                 </td>
             </tr>
         `;
