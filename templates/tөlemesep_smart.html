@@ -53,6 +53,20 @@
         color: #bdc3c7;
         font-style: italic;
     }
+
+/* Төлемдердің жеке блоктарына арналған стиль */
+    .payment-badge {
+        background: #e8f5e9;
+        border-left: 3px solid #2e7d32;
+        margin: 4px 0;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        text-align: left;
+    }
+    .bank-name { color: #1565c0; font-weight: bold; text-transform: uppercase; }
+    .pay-date { color: #666; font-style: italic; }
+    .pay-amount { font-weight: bold; color: #2e7d32; display: block; }        
     </style>
 </head>
 <body>
@@ -111,55 +125,42 @@ function renderTable() {
     const mIdx = document.getElementById('monthSelector').value;
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
-    
+
     db.apartments.forEach(apt => {
         const L = apt.ledger[mIdx];
-        const ch = L.charges || {};
         
-        // Әр қызмет бойынша төлемдерді жеке-жеке жинау (Транзакциялар тізімі)
-        // Бұл функция берілген қызмет түрі (key) бойынша барлық төлемдерді форматтап қайтарады
-        const getFactDetails = (key) => {
-            if (!L.paymentTransactions || L.paymentTransactions.length === 0) return '<span class="no-pay">Төлем жоқ</span>';
+        // Функция: Төлемдерді жеке-жеке тізім қылып шығару
+        const formatTransactions = (serviceKey) => {
+            if (!L.paymentTransactions) return "—";
             
             return L.paymentTransactions
-                .filter(t => t.amounts && t.amounts[key] > 0) // Тек осы қызметке төленгендерін аламыз
+                .filter(t => t.amounts && t.amounts[serviceKey] > 0)
                 .map(t => `
-                    <div class="trans-item">
-                        <b>${t.amounts[key]} ₸</b> 
-                        <br><small>${t.paymentSource || 'Банк'} | ${t.date || ''}</small>
+                    <div class="payment-badge">
+                        <span class="pay-amount">${t.amounts[serviceKey]} ₸</span>
+                        <span class="bank-name">${t.paymentSource || 'банк'}</span> 
+                        <span class="pay-date">${t.date || ''}</span>
                     </div>
-                `).join('') || '<span class="no-pay">0</span>';
+                `).join('');
         };
 
         tbody.innerHTML += `
             <tr>
                 <td><b>${apt.id}</b></td>
-                <td>${apt.area}</td>
-                <td class="service-cell">
-                    <div class="plan-val">Жоспар: ${ch.maint}</div>
-                    <div class="fact-list">${getFactDetails('maint')}</div>
+                <td>${apt.area} м²</td>
+                <td>
+                    <div style="font-size:10px; color:#999;">Жоспар: ${L.charges.maint}</div>
+                    ${formatTransactions('maint')}
                 </td>
-                <td class="service-cell">
-                    <div class="plan-val">Жоспар: ${ch.clean}</div>
-                    <div class="fact-list">${getFactDetails('clean')}</div>
+                <td>${formatTransactions('clean')}</td>
+                <td>${formatTransactions('sec')}</td>
+                <td>${formatTransactions('heat')}</td>
+                <td>${formatTransactions('cap')}</td>
+                <td style="font-weight:bold; background:#f9f9f9;">
+                    ${L.totalMonthlyCharge} / <span style="color:green">${L.totalPaid || 0}</span>
                 </td>
-                <td class="service-cell">
-                    <div class="plan-val">Жоспар: ${ch.sec}</div>
-                    <div class="fact-list">${getFactDetails('sec')}</div>
-                </td>
-                <td class="service-cell">
-                    <div class="plan-val">Жоспар: ${ch.heat}</div>
-                    <div class="fact-list">${getFactDetails('heat')}</div>
-                </td>
-                <td class="service-cell">
-                    <div class="plan-val">Жоспар: ${ch.cap}</div>
-                    <div class="fact-list">${getFactDetails('cap')}</div>
-                </td>
-                <td style="background: #f1f8e9;">
-                    <b>${L.totalMonthlyCharge} ₸</b>
-                </td>
-                <td style="color: ${L.accumulated.overall > 0 ? 'red' : 'green'}; font-weight: bold;">
-                    ${L.accumulated.overall.toLocaleString()} ₸
+                <td style="color:${L.accumulated.overall > 0 ? 'red' : 'green'}">
+                    ${L.accumulated.overall} ₸
                 </td>
             </tr>
         `;
