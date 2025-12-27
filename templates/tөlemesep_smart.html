@@ -2,136 +2,258 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>Aqsai3-10a Қаржы Басқару Панелі</title>
+    <title>SK-BJ — Төлемдерді Толық Бақылау</title>
     <style>
-        /* БАСҚАРУ ПАНЕЛІНІҢ СТИЛІ */
-        body { font-family: Arial, sans-serif; background: #f0f2f5; color: #424242; font-size: 11px; padding: 10px; }
-        .admin-panel { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 1250px; margin: auto; }
-        .section { border: 1px solid #ddd; padding: 15px; border-radius: 5px; margin-bottom: 20px; background: white; }
-        .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 10px; } 
-        .btn { padding: 6px 12px; cursor: pointer; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .btn-green { background: #28a745; }
-        .btn-blue { background: #007bff; }
-        .btn-orange { background: #fd7e14; }
-        .btn-red { background: #dc3545; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
-        th { background: #f8f9fa; }
-        .stats-header { background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; border: 1px solid #b3d7ff; font-weight: bold; }
-        .footer-total { background: #eee; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 20px; font-size: 13px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 100%; margin: auto; }
+        
+        /* Басқару батырмалары */
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; background: #eef2f3; padding: 15px; border-radius: 8px; align-items: center; }
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn:hover { opacity: 0.9; }
+        .btn-update { background: #3498db; }
+        .btn-save { background: #27ae60; }
+
+        /* Кесте стилі */
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #34495e; color: white; padding: 10px; border: 1px solid #bdc3c7; position: sticky; top: 0; z-index: 10; }
+        td { border: 1px solid #dee2e6; padding: 5px; text-align: center; vertical-align: top; }
+
+        /* Жоспар (Сұр түс) */
+        .plan-val {
+            display: block;
+            color: #7f8c8d;
+            font-size: 11px;
+            border-bottom: 1px dashed #ccc;
+            margin-bottom: 4px;
+            padding-bottom: 2px;
+        }
+
+        /* Нақты төлемдер тізімі (Жасыл түс) */
+        .trans-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .trans-item {
+            background: #e8f5e9;
+            border-left: 3px solid #2e7d32;
+            padding: 3px;
+            border-radius: 2px;
+            text-align: left;
+            font-size: 11px;
+        }
+        .trans-amount { color: #1b5e20; font-weight: bold; font-size: 12px; }
+        .trans-meta { color: #555; font-size: 10px; display: block; }
+        
+        .no-pay { color: #e0e0e0; font-size: 10px; } /* Төлем жоқ болса */
+
+        /* Қорытынды бағандар */
+        .total-cell { background: #e0f2f1; font-weight: bold; color: #00695c; vertical-align: middle; }
+        .debt-cell { font-weight: bold; vertical-align: middle; }
+        .debt-red { color: #c0392b; background: #fce4ec; }
+        .debt-green { color: #27ae60; background: #e8f5e9; }
+
+        /* Footer */
+        tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
+        tfoot td { padding: 10px; }
     </style>
 </head>
-<body onload="init()">
+<body>
 
-<div class="admin-panel">
-    <h2>🏠 Қаржы Басқару Панелі</h2>
-
-    <div id="statsHeader" class="stats-header">
-        📊 Жалпы мәліметтер: 
-        <span style="margin-left: 20px;">Пәтер саны: <span id="totalAptsCount">0</span></span>
-        <span style="margin-left: 20px;">Жалпы ауданы: <span id="totalAreaSum">0</span> м²</span>
+<div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:#2c3e50;">📊 SK-BJ: Төлемдер тарихы (Жоспар / Факт)</h2>
+        <span id="syncStatus" style="font-weight:bold; color:#7f8c8d;">Күтуде...</span>
     </div>
 
     <div class="controls">
-        <label>Пәтер №:</label>
-        <input type="text" id="aptInput" value="1" style="width: 60px;">
-        <button class="btn btn-blue" onclick="loadApartment()">🔍 Көрсету</button>
-        <button class="btn btn-green" onclick="saveData()">💾 Сақтау</button>
+        <button class="btn btn-update" onclick="fetchData()">🔄 Жаңарту</button>
+        <select id="monthSelector" onchange="renderTable()" style="padding: 8px; border-radius: 4px; border:1px solid #ccc;"></select>
+        <button class="btn btn-save" onclick="saveData()">💾 Render-ге Сақтау</button>
     </div>
 
-    <div class="section">
-        <h3>📅 Ай сайынғы төлемдер тізімі (Есеп)</h3>
-        <div class="controls">
-            <label>Айды таңдаңыз:</label>
-            <select id="listMonthSelect">
-                <option value="Қаңтар">Қаңтар</option><option value="Ақпан">Ақпан</option>
-                <option value="Наурыз">Наурыз</option><option value="Сәуір">Сәуір</option>
-                <option value="Мамыр">Мамыр</option><option value="Маусым">Маусым</option>
-                <option value="Шілде">Шілде</option><option value="Тамыз">Тамыз</option>
-                <option value="Қыркүйек">Қыркүйек</option><option value="Қазан">Қазан</option>
-                <option value="Қараша">Қараша</option><option value="Желтоқсан">Желтоқсан</option>
-            </select>
-            <button onclick="generatePaymentList()" class="btn btn-blue">🔍 Тізімді құру</button>
-        </div>
-        
-        <div id="paymentListContainer">
-            <table id="mainPaymentTable">
-                <thead>
-                    <tr>
-                        <th>Пәтер №</th>
-                        <th>Ауданы (м²)</th>
-                        <th>Төлем сомасы (тг)</th>
-                        <th>БАРЛЫҒЫ (Ж/Т) <br><small>(Банк пен Күні)</small></th>
-                    </tr>
-                </thead>
-                <tbody id="paymentListBody">
-                    </tbody>
-                <tfoot id="paymentListFooter">
-                    </tfoot>
-            </table>
-        </div>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th width="50">№</th>
+                <th width="60">Аудан</th>
+                <th>Үй күтімі<br><small>(Жоспар/Факт)</small></th>
+                <th>Тазалық<br><small>(Жоспар/Факт)</small></th>
+                <th>Күзет<br><small>(Жоспар/Факт)</small></th>
+                <th>Жылу<br><small>(Жоспар/Факт)</small></th>
+                <th>Кап.жөндеу<br><small>(Жоспар/Факт)</small></th>
+                <th>Айлық Жалпы<br><small>(Есеп / Төленді)</small></th>
+                <th>Қарыз / Артық</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot id="tableFooter"></tfoot>
+    </table>
 </div>
 
 <script>
-    // Түпнұсқа файлдағы деректер мен функциялар
-    let apartments = []; // Бұл жерге сіздің APARTMENT_DATA тізіміңіз келеді
-    let financeAccounts = {}; 
+    let db = { apartments: [] };
 
-    function init() {
-        // Бастапқы деректерді жүктеу логикасы
-        generatePaymentList();
+    // 1. Деректерді алу
+    async function fetchData() {
+        document.getElementById('syncStatus').innerText = "🔄 Жүктелуде...";
+        try {
+            const res = await fetch('/api/data/');
+            if (!res.ok) throw new Error("Server Error");
+            db = await res.json();
+
+            // Айларды селекторға толтыру
+            const selector = document.getElementById('monthSelector');
+            if (db.apartments.length > 0) {
+                const months = db.apartments[0].ledger.map(l => l.month);
+                // Егер селектор бос болса ғана толтырамыз немесе қайта жаңартамыз
+                const currentVal = selector.value;
+                selector.innerHTML = months.map((m, i) => 
+                    `<option value="${i}" ${i === months.length - 1 ? 'selected' : ''}>${m}</option>`
+                ).join('');
+                if(currentVal) selector.value = currentVal; 
+            }
+
+            renderTable();
+            document.getElementById('syncStatus').innerText = "✅ Дайын";
+        } catch (e) {
+            console.error(e);
+            document.getElementById('syncStatus').innerText = "❌ Қате: База оқылмады";
+        }
     }
 
-    function generatePaymentList() {
-        const tbody = document.getElementById('paymentListBody');
-        const tfoot = document.getElementById('paymentListFooter');
+    // 2. Кестені сызу (ЕҢ МАҢЫЗДЫ БӨЛІК)
+    function renderTable() {
+        const mIdx = document.getElementById('monthSelector').value;
+        const tbody = document.getElementById('tableBody');
+        const tfoot = document.getElementById('tableFooter');
         tbody.innerHTML = '';
-        tfoot.innerHTML = '';
 
-        let totalSum = 0;
-        let totalArea = 0;
+        let grandTotalPlan = 0;
+        let grandTotalFact = 0;
 
-        // Пәтерлерді айналып шығу
-        apartments.forEach(apt => {
-            const acc = financeAccounts[apt.id] || {};
-            const sum = parseFloat(acc.paidAmount) || 0;
-            const area = parseFloat(apt.area) || 0;
-            
-            totalSum += sum;
-            totalArea += area;
+        db.apartments.forEach(apt => {
+            const L = apt.ledger[mIdx]; // Таңдалған ай
+            const ch = L.charges || {}; // Жоспарланған сомалар
 
-            const tr = document.createElement('tr');
-            // Банк пен төлем күнін біріктіру (сіз сұраған баған)
-            const bankAndDate = acc.bank ? `${acc.bank} | ${acc.payDate || ''}` : '—';
+            // --- Төлемдерді жинақтау және HTML құрастыру функциясы ---
+            // Бұл функция әр ұяшыққа бірнеше төлем болса, тізім қылып шығарады
+            let rowTotalPaid = 0;
 
-            tr.innerHTML = `
-                <td>${apt.id}</td>
-                <td>${area}</td>
-                <td>${sum.toLocaleString()}</td>
-                <td style="background: #f9f9f9; font-weight: bold;">
-                    ${sum.toLocaleString()} тг <br>
-                    <small style="color: #555; font-weight: normal;">${bankAndDate}</small>
-                </td>
+            const getFactHTML = (serviceKey) => {
+                // Егер төлемдер жоқ болса
+                if (!L.paymentTransactions || L.paymentTransactions.length === 0) {
+                    return '<span class="no-pay">-</span>';
+                }
+
+                // Осы қызмет түріне (мысалы 'maint') қатысты төлемдерді сүзіп аламыз
+                const payments = L.paymentTransactions.filter(t => t.amounts && t.amounts[serviceKey] > 0);
+
+                if (payments.length === 0) return '<span class="no-pay">-</span>';
+
+                // Әр төлемді жеке блок қылып шығару
+                return `<div class="trans-list">` + payments.map(t => {
+                    const amount = t.amounts[serviceKey];
+                    rowTotalPaid += amount; // Жолдың жалпы сомасына қосу
+                    const source = t.paymentSource ? t.paymentSource : 'касса';
+                    const date = t.date ? t.date.slice(5) : ''; // Жылды алып тастап, тек ай-күнін көрсету (MM-DD)
+                    
+                    return `
+                        <div class="trans-item">
+                            <span class="trans-amount">${amount}</span>
+                            <span class="trans-meta">${source} | ${date}</span>
+                        </div>
+                    `;
+                }).join('') + `</div>`;
+            };
+
+            // Ұяшықтарды толтыру
+            const maintHTML = getFactHTML('maint');
+            const cleanHTML = getFactHTML('clean');
+            const secHTML = getFactHTML('sec');
+            const heatHTML = getFactHTML('heat');
+            const capHTML = getFactHTML('cap');
+
+            grandTotalPlan += (L.totalMonthlyCharge || 0);
+            grandTotalFact += rowTotalPaid;
+
+            const debt = L.accumulated ? L.accumulated.overall : 0;
+            const debtClass = debt > 100 ? 'debt-red' : 'debt-green';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${apt.id}</b></td>
+                    <td>${apt.area}</td>
+                    
+                    <td>
+                        <span class="plan-val">Жос: ${ch.maint || 0}</span>
+                        ${maintHTML}
+                    </td>
+
+                    <td>
+                        <span class="plan-val">Жос: ${ch.clean || 0}</span>
+                        ${cleanHTML}
+                    </td>
+
+                    <td>
+                        <span class="plan-val">Жос: ${ch.sec || 0}</span>
+                        ${secHTML}
+                    </td>
+
+                    <td>
+                        <span class="plan-val">Жос: ${ch.heat || 0}</span>
+                        ${heatHTML}
+                    </td>
+
+                    <td>
+                        <span class="plan-val">Жос: ${ch.cap || 0}</span>
+                        ${capHTML}
+                    </td>
+
+                    <td class="total-cell">
+                        ${L.totalMonthlyCharge} / <span style="color:#27ae60">${rowTotalPaid}</span>
+                    </td>
+
+                    <td class="debt-cell ${debtClass}">
+                        ${debt.toLocaleString()}
+                    </td>
+                </tr>
             `;
-            tbody.appendChild(tr);
         });
 
-        // БАС ЖАҒЫНДАҒЫ көрсеткіштерді жаңарту
-        document.getElementById('totalAptsCount').innerText = apartments.length;
-        document.getElementById('totalAreaSum').innerText = totalArea.toFixed(2);
-
-        // АЯҒЫНДАҒЫ ЖАЛПЫ ЕСЕПТЕУ (FOOTER)
-        const footerRow = document.createElement('tr');
-        footerRow.className = 'footer-total';
-        footerRow.innerHTML = `
-            <td>БАРЛЫҒЫ (ИТОГО):</td>
-            <td>${totalArea.toFixed(2)} м²</td>
-            <td>-</td>
-            <td style="color: #007bff; font-size: 14px;">${totalSum.toLocaleString()} тг</td>
+        // Астыңғы қорытынды (Итого)
+        tfoot.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align:right">БАРЛЫҒЫ:</td>
+                <td>${grandTotalPlan.toLocaleString()} / ${grandTotalFact.toLocaleString()}</td>
+                <td>-</td>
+            </tr>
         `;
-        tfoot.appendChild(footerRow);
     }
+
+    // 3. Сақтау функциясы
+    async function saveData() {
+        document.getElementById('syncStatus').innerText = "⏳ Сақталуда...";
+        try {
+            const res = await fetch('/api/data/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(db)
+            });
+            if (res.ok) {
+                alert("Сәтті сақталды!");
+                document.getElementById('syncStatus').innerText = "✅ Сақталды";
+            } else {
+                alert("Сақтау қатесі!");
+            }
+        } catch (e) {
+            alert("Серверге қосыла алмады");
+        }
+    }
+
+    window.onload = fetchData;
 </script>
+
 </body>
 </html>
