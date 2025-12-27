@@ -2,197 +2,193 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>SK-BJ — Қаржылық Панель</title>
+    <title>SK-BJ — Динамикалық Басқару Панелі</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 15px; font-size: 12px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 15px; font-size: 12px; }
         .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 100%; margin: auto; }
         
-        .admin-section { background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px solid #2196f3; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .admin-section { background: #eef2f3; padding: 15px; border-radius: 8px; border: 1px solid #3498db; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
         
-        /* Жасырын файл таңдаушыны стильдеу */
-        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .btn-upload { border: 2px solid #2196f3; color: #2196f3; background-color: white; padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-block; }
-        .btn-upload:hover { background: #2196f3; color: white; }
-        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
-
+        .btn-upload { background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none; }
         .btn-save { background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
-        th { background: #34495e; color: white; padding: 10px; border: 1px solid #bdc3c7; }
-        td { border: 1px solid #dee2e6; padding: 8px; text-align: center; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #34495e; color: white; padding: 10px; border: 1px solid #455a64; font-size: 11px; }
+        td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
 
-        .plan-val { color: #7f8c8d; font-size: 11px; }
-        .fact-val { font-weight: bold; color: #27ae60; }
-        .trans-info { font-size: 11px; color: #555; margin-left: 8px; font-style: italic; }
-        .total-cell { background: #e8f5e9; font-weight: bold; text-align: left; padding-left: 10px; }
-        .debt-red { color: #c0392b; background: #fce4ec; font-weight: bold; }
-        .debt-green { color: #27ae60; background: #e8f5e9; font-weight: bold; }
-
+        .current-month-badge { background: #e67e22; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+        .plan-val { color: #7f8c8d; font-size: 10px; display: block; }
+        .fact-val { font-weight: bold; color: #2c3e50; }
+        .debt-red { color: #e74c3c; font-weight: bold; }
+        .debt-green { color: #27ae60; font-weight: bold; }
+        
         tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color:#2c3e50; margin-top:0;">📊 SK-BJ: Қаржылық есеп беру жүйесі</h2>
-
-    <div class="admin-section">
-        <div class="file-upload-wrapper">
-            <button class="btn-upload">📁 Базаны таңдау (Жүктеу)</button>
-            <input type="file" id="fileInput" accept=".json" onchange="loadJSONFile(this)">
-        </div>
-        
-        <select id="monthSelector" onchange="renderTable()" style="padding: 9px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
-            <option value="0">Қаңтар / Январь 2025</option>
-            <option value="1">Ақпан / Февраль 2025</option>
-            <option value="2">Наурыз / Март 2025</option>
-            <option value="3">Сәуір / Апрель 2025</option>
-            <option value="4">Мамыр / Май 2025</option>
-            <option value="5">Маусым / Июнь 2025</option>
-            <option value="6">Шілде / Июль 2025</option>
-            <option value="7">Тамыз / Август 2025</option>
-            <option value="8">Қыркүйек / Сентябрь 2025</option>
-            <option value="9">Қазан / Октябрь 2025</option>
-            <option value="10">Қараша / Ноябрь 2025</option>
-            <option value="11">Желтоқсан / Декабрь 2025</option>
-        </select>
-
-        <button class="btn-save" onclick="downloadJSON()">💾 Жаңартылған файлды сақтау</button>
-
-        <div style="margin-left: auto; font-weight: bold;">
-            🏠 Пәтер: <span id="statCount">0</span> | 📏 Аудан: <span id="statArea">0</span>
-        </div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:#2c3e50;">📊 SK-BJ: Динамикалық Есеп (Аудан & Тариф)</h2>
+        <div id="currentDateDisplay" class="current-month-badge">Жүктелуде...</div>
     </div>
 
-    <div id="statusMsg" style="margin-bottom:10px; font-weight:bold; color: #27ae60;"></div>
+    <div class="admin-section">
+        <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="loadDatabase(this)">
+        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">📁 Базаны жүктеу (Авто-ай)</button>
+        
+        <select id="monthSelector" onchange="renderTable()" style="padding: 8px; border-radius: 4px;">
+            <option value="0">Қаңтар / Январь</option>
+            <option value="1">Ақпан / Февраль</option>
+            <option value="2">Наурыз / Март</option>
+            <option value="3">Сәуір / Апрель</option>
+            <option value="4">Мамыр / Май</option>
+            <option value="5">Маусым / Июнь</option>
+            <option value="6">Шілде / Июль</option>
+            <option value="7">Тамыз / Август</option>
+            <option value="8">Қыркүйек / Сентябрь</option>
+            <option value="9">Қазан / Октябрь</option>
+            <option value="10">Қараша / Ноябрь</option>
+            <option value="11">Желтоқсан / Декабрь</option>
+        </select>
+
+        <button class="btn-save" onclick="exportData()">💾 Сақтау</button>
+    </div>
 
     <table>
         <thead>
             <tr>
-                <th>№</th>
-                <th>Аудан (м²)</th>
-                <th>Үй күтімі<br>(Жос/Фак)</th>
-                <th>Тазалық<br>(Жос/Фак)</th>
-                <th>Күзет<br>(Жос/Фак)</th>
-                <th>Жылу<br>(Жос/Фак)</th>
-                <th>Кап.жөндеу<br>(Жос/Фак)</th>
-                <th>Айлық Жалпы (Жоспарлы / Төленді)</th>
-                <th>Қарыз / Артық</th>
+                <th>№ Пәтер</th>
+                <th>Нақты Аудан</th>
+                <th>Үй күтімі</th>
+                <th>Тазалық</th>
+                <th>Күзет</th>
+                <th>Жылу</th>
+                <th>Кап. жөндеу</th>
+                <th>Айлық Жалпы</th>
+                <th>Қарыз</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-            <tr><td colspan="9" style="padding: 40px; color: #999;">Файлды таңдаңыз, деректер автоматты түрде жүктеледі...</td></tr>
-        </tbody>
+        <tbody id="tableBody"></tbody>
         <tfoot id="tableFooter"></tfoot>
     </table>
 </div>
 
 <script>
-    let db = { apartments: [] };
+    let db = null;
+    const monthsArr = ["Қаңтар", "Ақпан", "Наурыз", "Сәуір", "Мамыр", "Маусым", "Шілде", "Тамыз", "Қыркүйек", "Қазан", "Қараша", "Желтоқсан"];
 
-    // САНДАРДЫ ФОРМАТТАУ (5 065 526,21 / 35,2)
-    function fNum(num) {
-        if (num === undefined || num === null || isNaN(num)) return "0";
-        let parts = num.toFixed(2).split(".");
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Мыңдықтарға бос орын
-        let fraction = parts[1].replace(/0+$/, ""); // Соңындағы нөлдерді жою
-        return fraction === "" ? parts[0] : parts[0] + "," + fraction;
+    // 1. БЕТ ЖҮКТЕЛГЕНДЕ АҒЫМДАҒЫ АЙДЫ АНЫҚТАУ
+    window.onload = () => {
+        const now = new Date();
+        const currentMonthIdx = now.getMonth();
+        document.getElementById('monthSelector').value = currentMonthIdx;
+        document.getElementById('currentDateDisplay').innerText = "Бүгін: " + now.toLocaleDateString('kk-KZ') + " (" + monthsArr[currentMonthIdx] + ")";
+    };
+
+    function fNum(n) {
+        if (!n || isNaN(n)) return "0";
+        return n.toLocaleString('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 2 }).replace('.', ',');
     }
 
-    // ФАЙЛДЫ ТАҢДАҒАН БОЙДА ЖҮКТЕУ
-    function loadJSONFile(input) {
+    // 2. ДИНАМИКАЛЫҚ ПАРАМЕТРЛЕРДІ ТАБУ (Аудан мен Тариф)
+    function getSettingForMonth(settingsArr, monthIdx, key) {
+        // Базадағы customSettings ішінен берілген айға сәйкес соңғы мәнді табады
+        let activeValue = 0;
+        if (!settingsArr) return 0;
+        
+        // Массивті startMonth бойынша сұрыптап, айдан аспайтын ең соңғысын аламыз
+        const sorted = [...settingsArr].sort((a, b) => a.startMonth - b.startMonth);
+        sorted.forEach(s => {
+            if (monthIdx >= s.startMonth) {
+                activeValue = s[key] || s.rate || 0;
+            }
+        });
+        return activeValue;
+    }
+
+    // 3. БАЗАНЫ ЖҮКТЕУ
+    function loadDatabase(input) {
         const file = input.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                db = JSON.parse(e.target.result);
-                document.getElementById('statusMsg').innerText = "✅ Файл жүктелді: " + file.name;
-                renderTable();
-            } catch (err) {
-                alert("Қате: JSON форматы дұрыс емес!");
-                console.error(err);
-            }
+        reader.onload = (e) => {
+            db = JSON.parse(e.target.result);
+            renderTable();
         };
         reader.readAsText(file);
     }
 
+    // 4. КЕСТЕНІ ЕСЕПТЕУ ЖӘНЕ ШЫҒАРУ
     function renderTable() {
+        if (!db) return;
         const mIdx = parseInt(document.getElementById('monthSelector').value);
         const tbody = document.getElementById('tableBody');
-        const tfoot = document.getElementById('tableFooter');
-        if (!db.apartments || db.apartments.length === 0) return;
-
         tbody.innerHTML = '';
-        let totals = { area: 0, maintP: 0, maintF: 0, cleanP: 0, cleanF: 0, secP: 0, secF: 0, heatP: 0, heatF: 0, capP: 0, capF: 0, charge: 0, paid: 0, debt: 0 };
+
+        let totalStats = { area: 0, charge: 0, paid: 0, debt: 0 };
 
         db.apartments.forEach(apt => {
-            const L = apt.ledger[mIdx] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
-            const ch = L.charges || {};
-            
-            const getSum = (key) => (L.paymentTransactions || []).reduce((sum, t) => sum + (t.amounts[key] || 0), 0);
-            
-            const fM = getSum('maint'), fCl = getSum('clean'), fS = getSum('sec'), fH = getSum('heat'), fCp = getSum('cap');
-            const rowPaid = fM + fCl + fS + fH + fCp;
-            const rowCharge = L.totalMonthlyCharge || 0;
-            const rowDebt = L.accumulated ? L.accumulated.overall : 0;
+            // Ағымдағы айға нақты аудан мен тарифтерді есептеу
+            const currentArea = getSettingForMonth(apt.customSettings.area, mIdx, 'area');
+            const tMaint = getSettingForMonth(apt.customSettings.tariffs.maint, mIdx, 'rate');
+            const tClean = getSettingForMonth(apt.customSettings.tariffs.clean, mIdx, 'rate');
+            const tSec = getSettingForMonth(apt.customSettings.tariffs.sec, mIdx, 'rate');
+            const tHeat = getSettingForMonth(apt.customSettings.tariffs.heat, mIdx, 'rate');
+            const tCap = getSettingForMonth(apt.customSettings.tariffs.cap, mIdx, 'rate');
 
-            totals.area += (apt.area || 0);
-            totals.maintP += (ch.maint || 0); totals.maintF += fM;
-            totals.cleanP += (ch.clean || 0); totals.cleanF += fCl;
-            totals.secP += (ch.sec || 0);     totals.secF += fS;
-            totals.heatP += (ch.heat || 0);   totals.heatF += fH;
-            totals.capP += (ch.cap || 0);     totals.capF += fCp;
-            totals.charge += rowCharge;       totals.paid += rowPaid;
-            totals.debt += rowDebt;
+            // Төлемдер мен Жоспар (Егер базада сол айға жазылмаған болса, автоматты есептеледі)
+            const monthName = monthsArr[mIdx];
+            const L = apt.ledger[monthName] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
+            
+            // Егер жоспар (charges) бос болса - автоматты тарифпен есептеу
+            const chargeMaint = L.charges.maint || (currentArea * tMaint);
+            const chargeClean = L.charges.clean || tClean; // Тазалық көбіне тіркелген сома
+            const chargeSec = L.charges.sec || tSec;
+            const chargeHeat = L.charges.heat || (currentArea * tHeat);
+            const chargeCap = L.charges.cap || (currentArea * tCap);
 
-            const transDetails = (L.paymentTransactions || []).map(t => 
-                `${t.paymentSource || ''} ${t.date || ''}`
-            ).join('; ');
+            const rowChargeTotal = chargeMaint + chargeClean + chargeSec + chargeHeat + chargeCap;
+            const rowPaid = L.paymentTransactions.reduce((s, t) => s + Object.values(t.amounts).reduce((a, b) => a + b, 0), 0);
+            const rowDebt = L.accumulated.overall;
+
+            totalStats.area += currentArea;
+            totalStats.charge += rowChargeTotal;
+            totalStats.paid += rowPaid;
+            totalStats.debt += rowDebt;
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${apt.id}</b></td>
-                    <td>${fNum(apt.area)}</td>
-                    <td><span class="plan-val">${fNum(ch.maint)}</span> / <span class="fact-val">${fNum(fM)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.clean)}</span> / <span class="fact-val">${fNum(fCl)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.sec)}</span> / <span class="fact-val">${fNum(fS)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.heat)}</span> / <span class="fact-val">${fNum(fH)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.cap)}</span> / <span class="fact-val">${fNum(fCp)}</span></td>
-                    <td class="total-cell">
-                        ${fNum(rowCharge)} / ${fNum(rowPaid)} 
-                        <span class="trans-info">${transDetails}</span>
-                    </td>
+                    <td>${fNum(currentArea)}</td>
+                    <td><span class="plan-val">${fNum(chargeMaint)}</span></td>
+                    <td><span class="plan-val">${fNum(chargeClean)}</span></td>
+                    <td><span class="plan-val">${fNum(chargeSec)}</span></td>
+                    <td><span class="plan-val">${fNum(chargeHeat)}</span></td>
+                    <td><span class="plan-val">${fNum(chargeCap)}</span></td>
+                    <td style="background:#f9f9f9"><b>${fNum(rowChargeTotal)} / ${fNum(rowPaid)}</b></td>
                     <td class="${rowDebt > 0 ? 'debt-red' : 'debt-green'}">${fNum(rowDebt)}</td>
                 </tr>
             `;
         });
 
-        document.getElementById('statCount').innerText = db.apartments.length;
-        document.getElementById('statArea').innerText = fNum(totals.area);
-
-        tfoot.innerHTML = `
+        // Footer-ге жалпы сомаларды шығару
+        document.getElementById('tableFooter').innerHTML = `
             <tr>
-                <td>БАРЛЫҒЫ</td>
-                <td>${fNum(totals.area)}</td>
-                <td>${fNum(totals.maintP)} / ${fNum(totals.maintF)}</td>
-                <td>${fNum(totals.cleanP)} / ${fNum(totals.cleanF)}</td>
-                <td>${fNum(totals.secP)} / ${fNum(totals.secF)}</td>
-                <td>${fNum(totals.heatP)} / ${fNum(totals.heatF)}</td>
-                <td>${fNum(totals.capP)} / ${fNum(totals.capF)}</td>
-                <td>${fNum(totals.charge)} / ${fNum(totals.paid)}</td>
-                <td>${fNum(totals.debt)}</td>
+                <td>ҚОРЫТЫНДЫ</td>
+                <td>${fNum(totalStats.area)}</td>
+                <td colspan="5">Айлық жоспар: ${fNum(totalStats.charge)} тг</td>
+                <td>${fNum(totalStats.charge)} / ${fNum(totalStats.paid)}</td>
+                <td>${fNum(totalStats.debt)}</td>
             </tr>
         `;
     }
 
-    function downloadJSON() {
-        if (!db.apartments || db.apartments.length === 0) return alert("Сақтайтын дерек жоқ!");
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+    function exportData() {
+        const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
         const a = document.createElement('a');
-        a.setAttribute("href", dataStr);
-        a.setAttribute("download", "kz_tulem_updated.json");
+        a.href = URL.createObjectURL(blob);
+        a.download = "kz_tulem_updated.json";
         a.click();
     }
 </script>
