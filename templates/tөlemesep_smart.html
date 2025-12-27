@@ -4,50 +4,36 @@
     <meta charset="UTF-8">
     <title>SK-BJ — Төлемдерді Бақылау</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 20px; font-size: 12px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; font-size: 12px; }
         .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 100%; margin: auto; }
-        
-        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: #eef2f3; padding: 15px; border-radius: 8px; align-items: center; flex-wrap: wrap; }
-        .stats-top { display: flex; gap: 20px; font-weight: bold; color: #2c3e50; border-left: 2px solid #3498db; padding-left: 15px; }
-        
+        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: #eef2f3; padding: 15px; border-radius: 8px; align-items: center; }
+        .stats-top { display: flex; gap: 20px; font-weight: bold; color: #2c3e50; border-left: 3px solid #3498db; padding-left: 15px; }
         .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
         .btn-update { background: #3498db; }
         .btn-save { background: #27ae60; }
-
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
-        th { background: #34495e; color: white; padding: 8px; border: 1px solid #bdc3c7; position: sticky; top: 0; }
-        td { border: 1px solid #dee2e6; padding: 5px; text-align: center; vertical-align: middle; }
-
-        .plan-val { display: block; color: #7f8c8d; font-size: 10px; border-bottom: 1px dashed #ccc; margin-bottom: 2px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #34495e; color: white; padding: 8px; border: 1px solid #bdc3c7; }
+        td { border: 1px solid #dee2e6; padding: 6px; text-align: center; white-space: nowrap; }
+        .plan-val { color: #7f8c8d; font-size: 11px; }
         .fact-val { font-weight: bold; color: #27ae60; }
-
-        .trans-list { display: flex; flex-direction: column; gap: 2px; margin-top: 5px; }
-        .trans-item { background: #e8f5e9; border: 1px solid #c8e6c9; padding: 2px; border-radius: 3px; font-size: 10px; text-align: left; }
-        .trans-meta { color: #555; font-style: italic; display: block; font-size: 9px; }
-
-        .total-cell { background: #e0f2f1; font-weight: bold; }
-        .debt-red { color: #c0392b; background: #fce4ec; font-weight: bold; }
-        .debt-green { color: #27ae60; background: #e8f5e9; font-weight: bold; }
-
+        .trans-info { font-size: 10px; color: #555; margin-left: 5px; font-weight: normal; }
         tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
-        tfoot td { border: 1px solid #455a64; padding: 8px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="color:#2c3e50;">📊 SK-BJ: Төлемдер тарихы</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 style="color:#2c3e50; margin:0;">📊 SK-BJ: Қаржылық есеп</h2>
         <span id="syncStatus" style="font-weight:bold; color:#7f8c8d;">Күтуде...</span>
     </div>
 
     <div class="controls">
         <button class="btn btn-update" onclick="fetchData()">🔄 Жаңарту</button>
-        <select id="monthSelector" onchange="renderTable()" style="padding: 8px; border-radius: 4px;"></select>
-        <button class="btn btn-save" onclick="saveData()">💾 Render-ге Сақтау</button>
-        
+        <select id="monthSelector" onchange="renderTable()" style="padding: 6px;"></select>
+        <button class="btn btn-save" onclick="saveData()">💾 Сақтау</button>
         <div class="stats-top">
-            <div>Пәтер саны: <span id="statCount">0</span></div>
+            <div>Пәтерлер: <span id="statCount">0</span></div>
             <div>Жалпы аудан: <span id="statArea">0</span> м²</div>
         </div>
     </div>
@@ -57,12 +43,12 @@
             <tr>
                 <th>№</th>
                 <th>Аудан</th>
-                <th>Үй күтімі<br><small>(Жос/Факт)</small></th>
-                <th>Тазалық<br><small>(Жос/Факт)</small></th>
-                <th>Күзет<br><small>(Жос/Факт)</small></th>
-                <th>Жылу<br><small>(Жос/Факт)</small></th>
-                <th>Кап.жөндеу<br><small>(Жос/Факт)</small></th>
-                <th>Айлық Жалпы<br><small>(Есеп / Төленді)</small></th>
+                <th>Үй күтімі</th>
+                <th>Тазалық</th>
+                <th>Күзет</th>
+                <th>Жылу</th>
+                <th>Кап.жөндеу</th>
+                <th>Айлық Жалпы (Жоспар / Төлем)</th>
                 <th>Қарыз / Артық</th>
             </tr>
         </thead>
@@ -73,28 +59,27 @@
 
 <script>
     let db = { apartments: [] };
-    const monthNames = [
-        "Қаңтар. Январь 2025", "Ақпан. Февраль 2025", "Наурыз. Март 2025", 
-        "Сәуір. Апрель 2025", "Мамыр. Май 2025", "Маусым. Июнь 2025",
-        "Шілде. Июль 2025", "Тамыз. Август 2025", "Қыркүйек. Сентябрь 2025",
-        "Қазан. Октябрь 2025", "Қараша. Ноябрь 2025", "Желтоқсан. Декабрь 2025"
-    ];
+
+    // САНДАРДЫ ФОРМАТТАУ ФУНКЦИЯСЫ (1 234 567,89)
+    function fNum(num) {
+        if (num === undefined || num === null || isNaN(num)) return "0";
+        let parts = num.toFixed(2).split(".");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Мыңдықтарға бос орын
+        // Егер тиын болса ғана үтірмен көрсету, әйтпесе бүтін сан
+        return parts[1] === "00" ? parts[0] : parts[0] + "," + parts[1].replace(/0+$/, "");
+    }
 
     async function fetchData() {
         document.getElementById('syncStatus').innerText = "🔄 Жүктелуде...";
         try {
             const res = await fetch('/api/data/');
             db = await res.json();
-            
             const selector = document.getElementById('monthSelector');
-            selector.innerHTML = monthNames.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-            selector.value = new Date().getMonth(); // Ағымдағы айды таңдау
-
+            const months = ["Қаңтар", "Ақпан", "Наурыз", "Сәуір", "Мамыр", "Маусым", "Шілде", "Тамыз", "Қыркүйек", "Қазан", "Қараша", "Желтоқсан"];
+            selector.innerHTML = months.map((m, i) => `<option value="${i}">${m} 2025</option>`).join('');
             renderTable();
             document.getElementById('syncStatus').innerText = "✅ Дайын";
-        } catch (e) {
-            document.getElementById('syncStatus').innerText = "❌ База оқылмады";
-        }
+        } catch (e) { document.getElementById('syncStatus').innerText = "❌ Қате"; }
     }
 
     function renderTable() {
@@ -106,69 +91,62 @@
         let totals = { area: 0, maintP: 0, maintF: 0, cleanP: 0, cleanF: 0, secP: 0, secF: 0, heatP: 0, heatF: 0, capP: 0, capF: 0, charge: 0, paid: 0, debt: 0 };
 
         db.apartments.forEach(apt => {
-            const L = apt.ledger[mIdx] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
+            const L = apt.ledger[mIdx] || { charges: {}, paymentTransactions: [] };
             const ch = L.charges || {};
             
-            // Әр қызмет бойынша фактіні есептеу
             const getSum = (key) => (L.paymentTransactions || []).reduce((sum, t) => sum + (t.amounts[key] || 0), 0);
             
-            const fMaint = getSum('maint'), fClean = getSum('clean'), fSec = getSum('sec'), fHeat = getSum('heat'), fCap = getSum('cap');
-            const rowPaid = fMaint + fClean + fSec + fHeat + fCap;
+            const fM = getSum('maint'), fCl = getSum('clean'), fS = getSum('sec'), fH = getSum('heat'), fCp = getSum('cap');
+            const rowPaid = fM + fCl + fS + fH + fCp;
             const rowCharge = L.totalMonthlyCharge || 0;
             const rowDebt = L.accumulated ? L.accumulated.overall : 0;
 
-            // Статистика жинау
+            // Жиынтықтар
             totals.area += (apt.area || 0);
-            totals.maintP += (ch.maint || 0); totals.maintF += fMaint;
-            totals.cleanP += (ch.clean || 0); totals.cleanF += fClean;
-            totals.secP += (ch.sec || 0);     totals.secF += fSec;
-            totals.heatP += (ch.heat || 0);   totals.heatF += fHeat;
-            totals.capP += (ch.cap || 0);     totals.capF += fCap;
+            totals.maintP += (ch.maint || 0); totals.maintF += fM;
+            totals.cleanP += (ch.clean || 0); totals.cleanF += fCl;
+            totals.secP += (ch.sec || 0);     totals.secF += fS;
+            totals.heatP += (ch.heat || 0);   totals.heatF += fH;
+            totals.capP += (ch.cap || 0);     totals.capF += fCp;
             totals.charge += rowCharge;       totals.paid += rowPaid;
             totals.debt += rowDebt;
 
-            // Төлемдер тізімі (Банк + Күн) тек осы жерде
-            const transHTML = (L.paymentTransactions || []).map(t => `
-                <div class="trans-item">
-                    <b>${(t.amounts.maint+t.amounts.clean+t.amounts.sec+t.amounts.heat+t.amounts.cap)} тг</b>
-                    <span class="trans-meta">${t.paymentSource || 'касса'} | ${t.date || ''}</span>
-                </div>
-            `).join('');
+            // Төлем ақпаратын жинау (Бір жолға)
+            const transDetails = (L.paymentTransactions || []).map(t => 
+                `<span class="trans-info">${t.paymentSource || ''} ${t.date || ''}</span>`
+            ).join(' ');
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${apt.id}</b></td>
-                    <td>${apt.area}</td>
-                    <td><span class="plan-val">${ch.maint || 0}</span><span class="fact-val">${fMaint || ''}</span></td>
-                    <td><span class="plan-val">${ch.clean || 0}</span><span class="fact-val">${fClean || ''}</span></td>
-                    <td><span class="plan-val">${ch.sec || 0}</span><span class="fact-val">${fSec || ''}</span></td>
-                    <td><span class="plan-val">${ch.heat || 0}</span><span class="fact-val">${fHeat || ''}</span></td>
-                    <td><span class="plan-val">${ch.cap || 0}</span><span class="fact-val">${fCap || ''}</span></td>
-                    <td class="total-cell">
-                        ${rowCharge} / <span style="color:#27ae60">${rowPaid}</span>
-                        <div class="trans-list">${transHTML}</div>
+                    <td>${fNum(apt.area)}</td>
+                    <td><span class="plan-val">${fNum(ch.maint)}</span> / <span class="fact-val">${fNum(fM)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.clean)}</span> / <span class="fact-val">${fNum(fCl)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.sec)}</span> / <span class="fact-val">${fNum(fS)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.heat)}</span> / <span class="fact-val">${fNum(fH)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.cap)}</span> / <span class="fact-val">${fNum(fCp)}</span></td>
+                    <td style="background:#e8f5e9;">
+                        <b>${fNum(rowCharge)} / ${fNum(rowPaid)}</b> ${transDetails}
                     </td>
-                    <td class="${rowDebt > 0 ? 'debt-red' : 'debt-green'}">${rowDebt.toLocaleString()}</td>
+                    <td style="font-weight:bold; color:${rowDebt > 0 ? '#c0392b' : '#27ae60'}">${fNum(rowDebt)}</td>
                 </tr>
             `;
         });
 
-        // Статистиканы жаңарту
         document.getElementById('statCount').innerText = db.apartments.length;
-        document.getElementById('statArea').innerText = totals.area.toFixed(2);
+        document.getElementById('statArea').innerText = fNum(totals.area);
 
-        // FOOTER (ИТОГО)
         tfoot.innerHTML = `
             <tr>
-                <td>∑</td>
-                <td>${totals.area.toFixed(1)}</td>
-                <td>${totals.maintP} / ${totals.maintF}</td>
-                <td>${totals.cleanP} / ${totals.cleanF}</td>
-                <td>${totals.secP} / ${totals.secF}</td>
-                <td>${totals.heatP} / ${totals.heatF}</td>
-                <td>${totals.capP} / ${totals.capF}</td>
-                <td>${totals.charge.toLocaleString()} / ${totals.paid.toLocaleString()}</td>
-                <td>${totals.debt.toLocaleString()}</td>
+                <td>БАРЛЫҒЫ</td>
+                <td>${fNum(totals.area)}</td>
+                <td>${fNum(totals.maintP)} / ${fNum(totals.maintF)}</td>
+                <td>${fNum(totals.cleanP)} / ${fNum(totals.cleanF)}</td>
+                <td>${fNum(totals.secP)} / ${fNum(totals.secF)}</td>
+                <td>${fNum(totals.heatP)} / ${fNum(totals.heatF)}</td>
+                <td>${fNum(totals.capP)} / ${fNum(totals.capF)}</td>
+                <td>${fNum(totals.charge)} / ${fNum(totals.paid)}</td>
+                <td>${fNum(totals.debt)}</td>
             </tr>
         `;
     }
@@ -182,7 +160,7 @@
                 body: JSON.stringify(db)
             });
             document.getElementById('syncStatus').innerText = "✅ Сақталды";
-        } catch (e) { alert("Қате!"); }
+        } catch (e) { alert("Қате орын алды"); }
     }
 
     window.onload = fetchData;
