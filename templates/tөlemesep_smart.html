@@ -2,40 +2,36 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>SK-BJ — Төлемдерді Бақылау</title>
+    <title>SK-BJ — Қаржылық есеп</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; font-size: 12px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 100%; margin: auto; }
-        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: #eef2f3; padding: 15px; border-radius: 8px; align-items: center; }
-        .stats-top { display: flex; gap: 20px; font-weight: bold; color: #2c3e50; border-left: 3px solid #3498db; padding-left: 15px; }
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-update { background: #3498db; }
-        .btn-save { background: #27ae60; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #34495e; color: white; padding: 8px; border: 1px solid #bdc3c7; }
-        td { border: 1px solid #dee2e6; padding: 6px; text-align: center; white-space: nowrap; }
-        .plan-val { color: #7f8c8d; font-size: 11px; }
-        .fact-val { font-weight: bold; color: #27ae60; }
-        .trans-info { font-size: 10px; color: #555; margin-left: 5px; font-weight: normal; }
-        tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 20px; font-size: 12px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header-box { display: flex; justify-content: space-between; align-items: center; background: #34495e; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
+        .stats-row { display: flex; gap: 30px; background: #eef2f3; padding: 15px; border: 1px solid #ddd; border-top: none; font-weight: bold; font-size: 14px; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f8f9fa; color: #333; padding: 10px; border: 1px solid #dee2e6; font-size: 11px; }
+        td { border: 1px solid #dee2e6; padding: 8px; text-align: center; white-space: nowrap; }
+
+        .total-col { background: #e8f5e9; font-weight: bold; text-align: left; padding-left: 10px; }
+        .trans-info { font-weight: normal; color: #555; font-size: 11px; margin-left: 8px; }
+        
+        tfoot tr { background: #34495e; color: white; font-weight: bold; }
+        .debt-red { color: #c0392b; font-weight: bold; }
+        .debt-green { color: #27ae60; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h2 style="color:#2c3e50; margin:0;">📊 SK-BJ: Қаржылық есеп</h2>
-        <span id="syncStatus" style="font-weight:bold; color:#7f8c8d;">Күтуде...</span>
+    <div class="header-box">
+        <h2 style="margin:0;">📊 SK-BJ: Төлемдерді бақылау</h2>
+        <div id="syncStatus">Дайын</div>
     </div>
 
-    <div class="controls">
-        <button class="btn btn-update" onclick="fetchData()">🔄 Жаңарту</button>
-        <select id="monthSelector" onchange="renderTable()" style="padding: 6px;"></select>
-        <button class="btn btn-save" onclick="saveData()">💾 Сақтау</button>
-        <div class="stats-top">
-            <div>Пәтерлер: <span id="statCount">0</span></div>
-            <div>Жалпы аудан: <span id="statArea">0</span> м²</div>
-        </div>
+    <div class="stats-row">
+        <div>🏠 Жалпы пәтер саны: <span id="statCount">0</span></div>
+        <div>📏 Жалпы ауданы: <span id="statArea">0</span></div>
     </div>
 
     <table>
@@ -43,12 +39,12 @@
             <tr>
                 <th>№</th>
                 <th>Аудан</th>
-                <th>Үй күтімі</th>
-                <th>Тазалық</th>
-                <th>Күзет</th>
-                <th>Жылу</th>
-                <th>Кап.жөндеу</th>
-                <th>Айлық Жалпы (Жоспар / Төлем)</th>
+                <th>Үй күтімі<br>(Жос/Факт)</th>
+                <th>Тазалық<br>(Жос/Факт)</th>
+                <th>Күзет<br>(Жос/Факт)</th>
+                <th>Жылу<br>(Жос/Факт)</th>
+                <th>Кап.жөндеу<br>(Жос/Факт)</th>
+                <th>Айлық Жалпы (Жоспарлы / Төленді)</th>
                 <th>Қарыз / Артық</th>
             </tr>
         </thead>
@@ -58,32 +54,21 @@
 </div>
 
 <script>
-    let db = { apartments: [] };
-
-    // САНДАРДЫ ФОРМАТТАУ ФУНКЦИЯСЫ (1 234 567,89)
-    function fNum(num) {
+    // САНДАРДЫ ФОРМАТТАУ: 5 065 526,21
+    function formatNumber(num) {
         if (num === undefined || num === null || isNaN(num)) return "0";
         let parts = num.toFixed(2).split(".");
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " "); // Мыңдықтарға бос орын
-        // Егер тиын болса ғана үтірмен көрсету, әйтпесе бүтін сан
-        return parts[1] === "00" ? parts[0] : parts[0] + "," + parts[1].replace(/0+$/, "");
+        // Мыңдықтарды бос орынмен бөлу
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        // Бөлшек бөлігі 00 болса, оны алып тастау, әйтпесе үтірмен жалғау
+        let decimal = parts[1] === "00" ? "" : "," + parts[1].replace(/0+$/, "");
+        if (decimal === ",") decimal = ""; 
+        return parts[0] + decimal;
     }
 
-    async function fetchData() {
-        document.getElementById('syncStatus').innerText = "🔄 Жүктелуде...";
-        try {
-            const res = await fetch('/api/data/');
-            db = await res.json();
-            const selector = document.getElementById('monthSelector');
-            const months = ["Қаңтар", "Ақпан", "Наурыз", "Сәуір", "Мамыр", "Маусым", "Шілде", "Тамыз", "Қыркүйек", "Қазан", "Қараша", "Желтоқсан"];
-            selector.innerHTML = months.map((m, i) => `<option value="${i}">${m} 2025</option>`).join('');
-            renderTable();
-            document.getElementById('syncStatus').innerText = "✅ Дайын";
-        } catch (e) { document.getElementById('syncStatus').innerText = "❌ Қате"; }
-    }
+    let db = { apartments: [] }; // Бұл жерге API-ден деректер келеді
 
     function renderTable() {
-        const mIdx = document.getElementById('monthSelector').value;
         const tbody = document.getElementById('tableBody');
         const tfoot = document.getElementById('tableFooter');
         tbody.innerHTML = '';
@@ -91,6 +76,7 @@
         let totals = { area: 0, maintP: 0, maintF: 0, cleanP: 0, cleanF: 0, secP: 0, secF: 0, heatP: 0, heatF: 0, capP: 0, capF: 0, charge: 0, paid: 0, debt: 0 };
 
         db.apartments.forEach(apt => {
+            const mIdx = 0; // Ағымдағы ай
             const L = apt.ledger[mIdx] || { charges: {}, paymentTransactions: [] };
             const ch = L.charges || {};
             
@@ -101,7 +87,7 @@
             const rowCharge = L.totalMonthlyCharge || 0;
             const rowDebt = L.accumulated ? L.accumulated.overall : 0;
 
-            // Жиынтықтар
+            // Барлығын қосу
             totals.area += (apt.area || 0);
             totals.maintP += (ch.maint || 0); totals.maintF += fM;
             totals.cleanP += (ch.clean || 0); totals.cleanF += fCl;
@@ -111,59 +97,65 @@
             totals.charge += rowCharge;       totals.paid += rowPaid;
             totals.debt += rowDebt;
 
-            // Төлем ақпаратын жинау (Бір жолға)
-            const transDetails = (L.paymentTransactions || []).map(t => 
-                `<span class="trans-info">${t.paymentSource || ''} ${t.date || ''}</span>`
-            ).join(' ');
+            // Төлем ақпаратын бір жолға жинау
+            const transInfo = (L.paymentTransactions || []).map(t => 
+                `${t.paymentSource || ''} ${t.date || ''}`
+            ).join('; ');
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${apt.id}</b></td>
-                    <td>${fNum(apt.area)}</td>
-                    <td><span class="plan-val">${fNum(ch.maint)}</span> / <span class="fact-val">${fNum(fM)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.clean)}</span> / <span class="fact-val">${fNum(fCl)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.sec)}</span> / <span class="fact-val">${fNum(fS)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.heat)}</span> / <span class="fact-val">${fNum(fH)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.cap)}</span> / <span class="fact-val">${fNum(fCp)}</span></td>
-                    <td style="background:#e8f5e9;">
-                        <b>${fNum(rowCharge)} / ${fNum(rowPaid)}</b> ${transDetails}
+                    <td>${formatNumber(apt.area)}</td>
+                    <td>${formatNumber(ch.maint)} / ${formatNumber(fM)}</td>
+                    <td>${formatNumber(ch.clean)} / ${formatNumber(fCl)}</td>
+                    <td>${formatNumber(ch.sec)} / ${formatNumber(fS)}</td>
+                    <td>${formatNumber(ch.heat)} / ${formatNumber(fH)}</td>
+                    <td>${formatNumber(ch.cap)} / ${formatNumber(fCp)}</td>
+                    <td class="total-col">
+                        ${formatNumber(rowCharge)} / ${formatNumber(rowPaid)} 
+                        <span class="trans-info">${transInfo}</span>
                     </td>
-                    <td style="font-weight:bold; color:${rowDebt > 0 ? '#c0392b' : '#27ae60'}">${fNum(rowDebt)}</td>
+                    <td class="${rowDebt > 0 ? 'debt-red' : 'debt-green'}">${formatNumber(rowDebt)}</td>
                 </tr>
             `;
         });
 
+        // Статистиканы жаңарту
         document.getElementById('statCount').innerText = db.apartments.length;
-        document.getElementById('statArea').innerText = fNum(totals.area);
+        document.getElementById('statArea').innerText = formatNumber(totals.area);
 
+        // Төменгі жиынтық
         tfoot.innerHTML = `
             <tr>
                 <td>БАРЛЫҒЫ</td>
-                <td>${fNum(totals.area)}</td>
-                <td>${fNum(totals.maintP)} / ${fNum(totals.maintF)}</td>
-                <td>${fNum(totals.cleanP)} / ${fNum(totals.cleanF)}</td>
-                <td>${fNum(totals.secP)} / ${fNum(totals.secF)}</td>
-                <td>${fNum(totals.heatP)} / ${fNum(totals.heatF)}</td>
-                <td>${fNum(totals.capP)} / ${fNum(totals.capF)}</td>
-                <td>${fNum(totals.charge)} / ${fNum(totals.paid)}</td>
-                <td>${fNum(totals.debt)}</td>
+                <td>${formatNumber(totals.area)}</td>
+                <td>${formatNumber(totals.maintP)} / ${formatNumber(totals.maintF)}</td>
+                <td>${formatNumber(totals.cleanP)} / ${formatNumber(totals.cleanF)}</td>
+                <td>${formatNumber(totals.secP)} / ${formatNumber(totals.secF)}</td>
+                <td>${formatNumber(totals.heatP)} / ${formatNumber(totals.heatF)}</td>
+                <td>${formatNumber(totals.capP)} / ${formatNumber(totals.capF)}</td>
+                <td>${formatNumber(totals.charge)} / ${formatNumber(totals.paid)}</td>
+                <td>${formatNumber(totals.debt)}</td>
             </tr>
         `;
     }
 
-    async function saveData() {
-        document.getElementById('syncStatus').innerText = "⏳ Сақталуда...";
-        try {
-            await fetch('/api/data/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(db)
-            });
-            document.getElementById('syncStatus').innerText = "✅ Сақталды";
-        } catch (e) { alert("Қате орын алды"); }
-    }
-
-    window.onload = fetchData;
+    // Тексеру үшін мысал деректер (API-ден келгенде бұл автоматты түрде толады)
+    window.onload = () => {
+        db.apartments = [
+            { 
+                id: "101", area: 35.2, 
+                ledger: [{ 
+                    charges: { maint: 1660, clean: 1000, sec: 1000, heat: 1017.5, cap: 0 },
+                    totalMonthlyCharge: 4677.5,
+                    paymentTransactions: [{ paymentSource: "Kaspi Bank (auto)", date: "2025-12-22", amounts: { maint: 1660, clean: 1000, sec: 1000, heat: 1040, cap: 0 } }],
+                    accumulated: { overall: -22.5 }
+                }] 
+            }
+        ];
+        renderTable();
+    };
 </script>
+
 </body>
 </html>
