@@ -101,19 +101,25 @@
         return fraction === "" ? parts[0] : parts[0] + "," + fraction;
     }
 
-    async function fetchData() {
-        document.getElementById('syncStatus').innerText = "🔄 Жүктелуде...";
-        try {
-            const res = await fetch(API_URL);
-            if (!res.ok) throw new Error("Сервер қатесі");
-            db = await res.json();
-            renderTable();
-            document.getElementById('syncStatus').innerText = "✅ Дайын";
-        } catch (e) {
-            console.error(e);
-            document.getElementById('syncStatus').innerText = "❌ Қате: База оқылмады";
-        }
+// Деректерді серверден (Render) автоматты алу
+async function fetchData() {
+    try {
+        const res = await fetch('/api/data/'); // Сервердегі соңғы файлды оқиды
+        db = await res.json();
+        renderTable();
+    } catch (e) {
+        console.error("Деректерді жүктеу мүмкін болмады");
     }
+}
+
+// Төлем енгізілген сайын серверге жіберу
+async function saveData() {
+    await fetch('/api/data/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(db) // db айнымалысындағы барлық өзгерісті сақтайды
+    });
+}
 
     function renderTable() {
         const mIdx = document.getElementById('monthSelector').value;
