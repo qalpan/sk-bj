@@ -2,216 +2,135 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>SK-BJ — Қаржы Басқару Панелі</title>
+    <title>SK-BJ — Файлды Жүктеу Панелі</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 15px; font-size: 12px; }
-        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 100%; margin: auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; font-size: 13px; }
+        .admin-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .file-upload-section { 
+            background: #e3f2fd; padding: 20px; border: 2px dashed #2196f3; 
+            border-radius: 8px; text-align: center; margin-bottom: 20px; 
+        }
+        .btn { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; color: white; }
+        .btn-load { background: #2196f3; margin-left: 10px; }
+        .btn-save { background: #27ae60; margin-top: 10px; }
         
-        /* Басқару панелі */
-        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: #eef2f3; padding: 15px; border-radius: 8px; align-items: center; flex-wrap: wrap; }
-        .stats-top { display: flex; gap: 20px; font-weight: bold; color: #2c3e50; border-left: 3px solid #3498db; padding-left: 15px; font-size: 13px; }
-        
-        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
-        .btn-update { background: #3498db; }
-        .btn-save { background: #27ae60; }
-        .btn:hover { opacity: 0.8; }
-
-        /* Кесте */
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
-        th { background: #34495e; color: white; padding: 10px; border: 1px solid #bdc3c7; position: sticky; top: 0; z-index: 10; }
-        td { border: 1px solid #dee2e6; padding: 6px; text-align: center; vertical-align: middle; white-space: nowrap; }
-
-        /* Сандар және формат */
-        .plan-val { color: #7f8c8d; font-size: 11px; }
-        .fact-val { font-weight: bold; color: #27ae60; }
-        .trans-info { font-size: 11px; color: #555; font-weight: normal; margin-left: 8px; font-style: italic; }
-
-        .total-cell { background: #e8f5e9; font-weight: bold; text-align: left; padding-left: 10px; }
-        .debt-red { color: #c0392b; background: #fce4ec; font-weight: bold; }
-        .debt-green { color: #27ae60; background: #e8f5e9; font-weight: bold; }
-
-        /* Footer */
-        tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
-        tfoot td { border: 1px solid #455a64; padding: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #34495e; color: white; padding: 10px; border: 1px solid #ddd; }
+        td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        .trans-info { color: #666; font-size: 11px; display: block; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h2 style="color:#2c3e50; margin:0;">📊 SK-BJ: Төлемдер тарихы (Жоспар / Факт)</h2>
-        <span id="syncStatus" style="font-weight:bold; color:#7f8c8d;">Күтуде...</span>
+<div class="admin-box">
+    <h2>📂 Деректер базасын басқару</h2>
+    
+    <div class="file-upload-section">
+        <label style="font-weight: bold;">JSON Файлды таңдаңыз: </label>
+        <input type="file" id="fileInput" accept=".json">
+        <button class="btn btn-load" onclick="loadLocalFile()">📥 Кестеге жүктеу</button>
+        <p style="font-size: 11px; color: #555; margin-top: 10px;">
+            (Компьютердегі соңғы сақталған "kz_tulem_database..." файлын таңдаңыз)
+        </p>
     </div>
 
-    <div class="controls">
-        <button class="btn btn-update" onclick="fetchData()">🔄 Жаңарту</button>
-        <select id="monthSelector" onchange="renderTable()" style="padding: 8px; border-radius: 4px; border:1px solid #ccc;">
-            <option value="0">Қаңтар. Январь 2025</option>
-            <option value="1">Ақпан. Февраль 2025</option>
-            <option value="2">Наурыз. Март 2025</option>
-            <option value="3">Сәуір. Апрель 2025</option>
-            <option value="4">Мамыр. Май 2025</option>
-            <option value="5">Маусым. Июнь 2025</option>
-            <option value="6">Шілде. Июль 2025</option>
-            <option value="7">Тамыз. Август 2025</option>
-            <option value="8">Қыркүйек. Сентябрь 2025</option>
-            <option value="9">Қазан. Октябрь 2025</option>
-            <option value="10">Қараша. Ноябрь 2025</option>
-            <option value="11">Желтоқсан. Декабрь 2025</option>
-        </select>
-        <button class="btn btn-save" onclick="saveData()">💾 Render-ге Сақтау</button>
-        
-        <div class="stats-top">
-            <div>Жалпы пәтер: <span id="statCount">0</span></div>
-            <div>Жалпы аудан: <span id="statArea">0</span> м²</div>
-        </div>
-    </div>
+    <div id="status" style="font-weight: bold; color: #27ae60; margin-bottom: 10px;"></div>
 
     <table>
         <thead>
             <tr>
                 <th>№</th>
                 <th>Аудан</th>
-                <th>Үй күтімі<br>(Жос/Факт)</th>
-                <th>Тазалық<br>(Жос/Факт)</th>
-                <th>Күзет<br>(Жос/Факт)</th>
-                <th>Жылу<br>(Жос/Факт)</th>
-                <th>Кап.жөндеу<br>(Жос/Факт)</th>
                 <th>Айлық Жалпы (Жоспар / Төлем)</th>
-                <th>Қарыз / Артық</th>
+                <th>Төлем мәліметтері</th>
+                <th>Қарыз</th>
             </tr>
         </thead>
-        <tbody id="tableBody"></tbody>
-        <tfoot id="tableFooter"></tfoot>
+        <tbody id="tableBody">
+            <tr><td colspan="5">Деректер жүктелмеген. Файлды таңдаңыз.</td></tr>
+        </tbody>
     </table>
+
+    <button class="btn btn-save" onclick="saveModifiedData()" style="display:none;" id="saveBtn">💾 Жаңа файлды сақтау</button>
 </div>
 
 <script>
-    const API_URL = '/api/data/'; 
     let db = { apartments: [] };
 
-    // САНДАРДЫ ФОРМАТТАУ: 5 065 526,21 немесе 35,2
+    // Сандарды форматтау функциясы (Сіз сұраған 5 065 526,21 форматы)
     function fNum(num) {
         if (num === undefined || num === null || isNaN(num)) return "0";
         let parts = num.toFixed(2).split(".");
-        // Мыңдықтарды бос орынмен бөлу
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-        // Бөлшек бөлігін үтірмен жазу (нөлдер болса алып тастау)
-        let fraction = parts[1].replace(/0+$/, ""); 
+        let fraction = parts[1].replace(/0+$/, "");
         return fraction === "" ? parts[0] : parts[0] + "," + fraction;
     }
 
-// Деректерді серверден (Render) автоматты алу
-async function fetchData() {
-    try {
-        const res = await fetch('/api/data/'); // Сервердегі соңғы файлды оқиды
-        db = await res.json();
-        renderTable();
-    } catch (e) {
-        console.error("Деректерді жүктеу мүмкін болмады");
+    // ФАЙЛДЫ ОҚУ ФУНКЦИЯСЫ
+    function loadLocalFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert("Өтініш, алдымен файлды таңдаңыз!");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                db = JSON.parse(e.target.result);
+                document.getElementById('status').innerText = "✅ Файл сәтті жүктелді: " + file.name;
+                document.getElementById('saveBtn').style.display = "block";
+                renderTable();
+            } catch (err) {
+                alert("Қате: Файл форматы дұрыс емес!");
+            }
+        };
+        reader.readAsText(file);
     }
-}
 
-// Төлем енгізілген сайын серверге жіберу
-async function saveData() {
-    await fetch('/api/data/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(db) // db айнымалысындағы барлық өзгерісті сақтайды
-    });
-}
-
+    // КЕСТЕНІ ШЫҒАРУ
     function renderTable() {
-        const mIdx = document.getElementById('monthSelector').value;
         const tbody = document.getElementById('tableBody');
-        const tfoot = document.getElementById('tableFooter');
         tbody.innerHTML = '';
-
-        let totals = { area: 0, maintP: 0, maintF: 0, cleanP: 0, cleanF: 0, secP: 0, secF: 0, heatP: 0, heatF: 0, capP: 0, capF: 0, charge: 0, paid: 0, debt: 0 };
+        const mIdx = 0; // Қаңтар айы мысалында
 
         db.apartments.forEach(apt => {
             const L = apt.ledger[mIdx] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
-            const ch = L.charges || {};
-            
-            const getSum = (key) => (L.paymentTransactions || []).reduce((sum, t) => sum + (t.amounts[key] || 0), 0);
-            
-            const fM = getSum('maint'), fCl = getSum('clean'), fS = getSum('sec'), fH = getSum('heat'), fCp = getSum('cap');
-            const rowPaid = fM + fCl + fS + fH + fCp;
+            const rowPaid = (L.paymentTransactions || []).reduce((sum, t) => 
+                sum + Object.values(t.amounts).reduce((a, b) => a + b, 0), 0
+            );
             const rowCharge = L.totalMonthlyCharge || 0;
             const rowDebt = L.accumulated ? L.accumulated.overall : 0;
 
-            // Статистика жинау
-            totals.area += (apt.area || 0);
-            totals.maintP += (ch.maint || 0); totals.maintF += fM;
-            totals.cleanP += (ch.clean || 0); totals.cleanF += fCl;
-            totals.secP += (ch.sec || 0);     totals.secF += fS;
-            totals.heatP += (ch.heat || 0);   totals.heatF += fH;
-            totals.capP += (ch.cap || 0);     totals.capF += fCp;
-            totals.charge += rowCharge;       totals.paid += rowPaid;
-            totals.debt += rowDebt;
-
-            // Төлем мәліметтерін (Банк, Күн) бір жолға жинау
             const transDetails = (L.paymentTransactions || []).map(t => 
-                `<span class="trans-info">${t.paymentSource || ''} ${t.date || ''}</span>`
-            ).join(' ');
+                `${t.paymentSource || ''} (${t.date || ''})`
+            ).join(', ');
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${apt.id}</b></td>
                     <td>${fNum(apt.area)}</td>
-                    <td><span class="plan-val">${fNum(ch.maint)}</span> / <span class="fact-val">${fNum(fM)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.clean)}</span> / <span class="fact-val">${fNum(fCl)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.sec)}</span> / <span class="fact-val">${fNum(fS)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.heat)}</span> / <span class="fact-val">${fNum(fH)}</span></td>
-                    <td><span class="plan-val">${fNum(ch.cap)}</span> / <span class="fact-val">${fNum(fCp)}</span></td>
-                    <td class="total-cell">
-                        ${fNum(rowCharge)} / ${fNum(rowPaid)} ${transDetails}
-                    </td>
-                    <td class="${rowDebt > 0 ? 'debt-red' : 'debt-green'}">${fNum(rowDebt)}</td>
+                    <td style="background: #e8f5e9;"><b>${fNum(rowCharge)} / ${fNum(rowPaid)}</b></td>
+                    <td><span class="trans-info">${transDetails || 'Төлем жоқ'}</span></td>
+                    <td style="color: ${rowDebt > 0 ? 'red' : 'green'}">${fNum(rowDebt)}</td>
                 </tr>
             `;
         });
-
-        document.getElementById('statCount').innerText = db.apartments.length;
-        document.getElementById('statArea').innerText = fNum(totals.area);
-
-        // ҚОРЫТЫНДЫ (FOOTER)
-        tfoot.innerHTML = `
-            <tr>
-                <td>БАРЛЫҒЫ</td>
-                <td>${fNum(totals.area)}</td>
-                <td>${fNum(totals.maintP)} / ${fNum(totals.maintF)}</td>
-                <td>${fNum(totals.cleanP)} / ${fNum(totals.cleanF)}</td>
-                <td>${fNum(totals.secP)} / ${fNum(totals.secF)}</td>
-                <td>${fNum(totals.heatP)} / ${fNum(totals.heatF)}</td>
-                <td>${fNum(totals.capP)} / ${fNum(totals.capF)}</td>
-                <td>${fNum(totals.charge)} / ${fNum(totals.paid)}</td>
-                <td>${fNum(totals.debt)}</td>
-            </tr>
-        `;
     }
 
-    async function saveData() {
-        document.getElementById('syncStatus').innerText = "⏳ Сақталуда...";
-        try {
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(db)
-            });
-            if (res.ok) {
-                alert("Сәтті сақталды!");
-                document.getElementById('syncStatus').innerText = "✅ Сақталды";
-            } else {
-                throw new Error("Сақтау қатесі");
-            }
-        } catch (e) {
-            alert("Қате: Серверге қосылу мүмкін емес");
-            document.getElementById('syncStatus').innerText = "❌ Қате";
-        }
+    // ӨЗГЕРІСТЕРДІ ЖАҢА ФАЙЛ РЕТІНДЕ САҚТАУ
+    function saveModifiedData() {
+        const dataStr = JSON.stringify(db, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "kz_tulem_database_updated.json";
+        a.click();
+        URL.revokeObjectURL(url);
     }
-
-    window.onload = fetchData;
 </script>
 
 </body>
