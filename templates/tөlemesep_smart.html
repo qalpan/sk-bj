@@ -2,134 +2,199 @@
 <html lang="kk">
 <head>
     <meta charset="UTF-8">
-    <title>SK-BJ — Файлды Жүктеу Панелі</title>
+    <title>SK-BJ — Басқару Панелі</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 20px; font-size: 13px; }
-        .admin-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .file-upload-section { 
-            background: #e3f2fd; padding: 20px; border: 2px dashed #2196f3; 
-            border-radius: 8px; text-align: center; margin-bottom: 20px; 
-        }
-        .btn { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; color: white; }
-        .btn-load { background: #2196f3; margin-left: 10px; }
-        .btn-save { background: #27ae60; margin-top: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 15px; font-size: 12px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #34495e; color: white; padding: 10px; border: 1px solid #ddd; }
-        td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        .trans-info { color: #666; font-size: 11px; display: block; }
+        /* Басқару бөлімі */
+        .admin-section { background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px solid #2196f3; margin-bottom: 20px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .stats-top { display: flex; gap: 20px; font-weight: bold; color: #2c3e50; font-size: 13px; }
+        
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
+        .btn-load { background: #2196f3; }
+        .btn-save { background: #27ae60; }
+
+        /* Кесте стилі */
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+        th { background: #34495e; color: white; padding: 10px; border: 1px solid #bdc3c7; }
+        td { border: 1px solid #dee2e6; padding: 6px; text-align: center; white-space: nowrap; }
+
+        /* Сандар форматы */
+        .plan-val { color: #7f8c8d; font-size: 11px; }
+        .fact-val { font-weight: bold; color: #27ae60; }
+        .trans-info { font-size: 11px; color: #555; margin-left: 8px; font-style: italic; }
+
+        .total-cell { background: #e8f5e9; font-weight: bold; text-align: left; padding-left: 10px; }
+        .debt-red { color: #c0392b; background: #fce4ec; font-weight: bold; }
+        .debt-green { color: #27ae60; background: #e8f5e9; font-weight: bold; }
+
+        tfoot tr { background: #2c3e50; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <h2>📂 Деректер базасын басқару</h2>
-    
-    <div class="file-upload-section">
-        <label style="font-weight: bold;">JSON Файлды таңдаңыз: </label>
-        <input type="file" id="fileInput" accept=".json">
-        <button class="btn btn-load" onclick="loadLocalFile()">📥 Кестеге жүктеу</button>
-        <p style="font-size: 11px; color: #555; margin-top: 10px;">
-            (Компьютердегі соңғы сақталған "kz_tulem_database..." файлын таңдаңыз)
-        </p>
+<div class="container">
+    <h2 style="color:#2c3e50; margin-top:0;">📊 SK-BJ: Қаржылық басқару және Есеп</h2>
+
+    <div class="admin-section">
+        <div>
+            <label><b>1. Базаны таңдаңыз:</b> </label>
+            <input type="file" id="fileInput" accept=".json">
+            <button class="btn btn-load" onclick="loadJSONFile()">📥 Жүктеу</button>
+        </div>
+        
+        <select id="monthSelector" onchange="renderTable()" style="padding: 6px; border-radius: 4px;">
+            <option value="0">Қаңтар 2025</option>
+            <option value="1">Ақпан 2025</option>
+            <option value="2">Наурыз 2025</option>
+            </select>
+
+        <button class="btn btn-save" onclick="downloadJSON()">💾 Жаңа файлды сақтау</button>
+
+        <div class="stats-top">
+            <div>🏠 Пәтер: <span id="statCount">0</span></div>
+            <div>📏 Аудан: <span id="statArea">0</span></div>
+        </div>
     </div>
 
-    <div id="status" style="font-weight: bold; color: #27ae60; margin-bottom: 10px;"></div>
+    <div id="statusMsg" style="margin-bottom:10px; font-weight:bold; color: #27ae60;"></div>
 
     <table>
         <thead>
             <tr>
                 <th>№</th>
                 <th>Аудан</th>
-                <th>Айлық Жалпы (Жоспар / Төлем)</th>
-                <th>Төлем мәліметтері</th>
-                <th>Қарыз</th>
+                <th>Үй күтімі<br>(Жос/Фак)</th>
+                <th>Тазалық<br>(Жос/Фак)</th>
+                <th>Күзет<br>(Жос/Фак)</th>
+                <th>Жылу<br>(Жос/Фак)</th>
+                <th>Кап.жөндеу<br>(Жос/Фак)</th>
+                <th>Айлық Жалпы (Жоспарлы / Төлем)</th>
+                <th>Қарыз / Артық</th>
             </tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="5">Деректер жүктелмеген. Файлды таңдаңыз.</td></tr>
+            <tr><td colspan="9">Файлды жүктеңіз...</td></tr>
         </tbody>
+        <tfoot id="tableFooter"></tfoot>
     </table>
-
-    <button class="btn btn-save" onclick="saveModifiedData()" style="display:none;" id="saveBtn">💾 Жаңа файлды сақтау</button>
 </div>
 
 <script>
     let db = { apartments: [] };
 
-    // Сандарды форматтау функциясы (Сіз сұраған 5 065 526,21 форматы)
+    // САНДАРДЫ ФОРМАТТАУ: 5 065 526,21 / 35,2
     function fNum(num) {
         if (num === undefined || num === null || isNaN(num)) return "0";
         let parts = num.toFixed(2).split(".");
+        // Мыңдықтарға бос орын қою
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        // Бөлшек бөлігі 00 болса көрсетпеу, әйтпесе үтірмен жалғау
         let fraction = parts[1].replace(/0+$/, "");
         return fraction === "" ? parts[0] : parts[0] + "," + fraction;
     }
 
-    // ФАЙЛДЫ ОҚУ ФУНКЦИЯСЫ
-    function loadLocalFile() {
+    // 1. JSON ФАЙЛДЫ ОҚУ
+    function loadJSONFile() {
         const fileInput = document.getElementById('fileInput');
         const file = fileInput.files[0];
-
-        if (!file) {
-            alert("Өтініш, алдымен файлды таңдаңыз!");
-            return;
-        }
+        if (!file) return alert("Файлды таңдаңыз!");
 
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 db = JSON.parse(e.target.result);
-                document.getElementById('status').innerText = "✅ Файл сәтті жүктелді: " + file.name;
-                document.getElementById('saveBtn').style.display = "block";
+                document.getElementById('statusMsg').innerText = "✅ Файл жүктелді: " + file.name;
                 renderTable();
             } catch (err) {
-                alert("Қате: Файл форматы дұрыс емес!");
+                alert("Қате: JSON форматы дұрыс емес!");
             }
         };
         reader.readAsText(file);
     }
 
-    // КЕСТЕНІ ШЫҒАРУ
+    // 2. КЕСТЕНІ ҚҰРАСТЫРУ
     function renderTable() {
+        const mIdx = document.getElementById('monthSelector').value;
         const tbody = document.getElementById('tableBody');
+        const tfoot = document.getElementById('tableFooter');
         tbody.innerHTML = '';
-        const mIdx = 0; // Қаңтар айы мысалында
+
+        let totals = { area: 0, maintP: 0, maintF: 0, cleanP: 0, cleanF: 0, secP: 0, secF: 0, heatP: 0, heatF: 0, capP: 0, capF: 0, charge: 0, paid: 0, debt: 0 };
+
+        if (!db.apartments) return;
 
         db.apartments.forEach(apt => {
             const L = apt.ledger[mIdx] || { charges: {}, paymentTransactions: [], accumulated: { overall: 0 } };
-            const rowPaid = (L.paymentTransactions || []).reduce((sum, t) => 
-                sum + Object.values(t.amounts).reduce((a, b) => a + b, 0), 0
-            );
+            const ch = L.charges || {};
+            
+            const getSum = (key) => (L.paymentTransactions || []).reduce((sum, t) => sum + (t.amounts[key] || 0), 0);
+            
+            const fM = getSum('maint'), fCl = getSum('clean'), fS = getSum('sec'), fH = getSum('heat'), fCp = getSum('cap');
+            const rowPaid = fM + fCl + fS + fH + fCp;
             const rowCharge = L.totalMonthlyCharge || 0;
             const rowDebt = L.accumulated ? L.accumulated.overall : 0;
 
+            // Жиынтықтар
+            totals.area += (apt.area || 0);
+            totals.maintP += (ch.maint || 0); totals.maintF += fM;
+            totals.cleanP += (ch.clean || 0); totals.cleanF += fCl;
+            totals.secP += (ch.sec || 0);     totals.secF += fS;
+            totals.heatP += (ch.heat || 0);   totals.heatF += fH;
+            totals.capP += (ch.cap || 0);     totals.capF += fCp;
+            totals.charge += rowCharge;       totals.paid += rowPaid;
+            totals.debt += rowDebt;
+
             const transDetails = (L.paymentTransactions || []).map(t => 
-                `${t.paymentSource || ''} (${t.date || ''})`
-            ).join(', ');
+                `${t.paymentSource || ''} ${t.date || ''}`
+            ).join('; ');
 
             tbody.innerHTML += `
                 <tr>
                     <td><b>${apt.id}</b></td>
                     <td>${fNum(apt.area)}</td>
-                    <td style="background: #e8f5e9;"><b>${fNum(rowCharge)} / ${fNum(rowPaid)}</b></td>
-                    <td><span class="trans-info">${transDetails || 'Төлем жоқ'}</span></td>
-                    <td style="color: ${rowDebt > 0 ? 'red' : 'green'}">${fNum(rowDebt)}</td>
+                    <td><span class="plan-val">${fNum(ch.maint)}</span> / <span class="fact-val">${fNum(fM)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.clean)}</span> / <span class="fact-val">${fNum(fCl)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.sec)}</span> / <span class="fact-val">${fNum(fS)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.heat)}</span> / <span class="fact-val">${fNum(fH)}</span></td>
+                    <td><span class="plan-val">${fNum(ch.cap)}</span> / <span class="fact-val">${fNum(fCp)}</span></td>
+                    <td class="total-cell">
+                        ${fNum(rowCharge)} / ${fNum(rowPaid)} 
+                        <span class="trans-info">${transDetails}</span>
+                    </td>
+                    <td class="${rowDebt > 0 ? 'debt-red' : 'debt-green'}">${fNum(rowDebt)}</td>
                 </tr>
             `;
         });
+
+        document.getElementById('statCount').innerText = db.apartments.length;
+        document.getElementById('statArea').innerText = fNum(totals.area);
+
+        tfoot.innerHTML = `
+            <tr>
+                <td>БАРЛЫҒЫ</td>
+                <td>${fNum(totals.area)}</td>
+                <td>${fNum(totals.maintP)} / ${fNum(totals.maintF)}</td>
+                <td>${fNum(totals.cleanP)} / ${fNum(totals.cleanF)}</td>
+                <td>${fNum(totals.secP)} / ${fNum(totals.secF)}</td>
+                <td>${fNum(totals.heatP)} / ${fNum(totals.heatF)}</td>
+                <td>${fNum(totals.capP)} / ${fNum(totals.capF)}</td>
+                <td>${fNum(totals.charge)} / ${fNum(totals.paid)}</td>
+                <td>${fNum(totals.debt)}</td>
+            </tr>
+        `;
     }
 
-    // ӨЗГЕРІСТЕРДІ ЖАҢА ФАЙЛ РЕТІНДЕ САҚТАУ
-    function saveModifiedData() {
-        const dataStr = JSON.stringify(db, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "kz_tulem_database_updated.json";
-        a.click();
-        URL.revokeObjectURL(url);
+    // 3. ӨЗГЕРТІЛГЕН ДЕРЕКТЕРДІ ЖҮКТЕП АЛУ
+    function downloadJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "kz_tulem_database_updated.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     }
 </script>
 
